@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}RentEase — Discover Your Future: Find The Perfect Property{% endblock %}
+
+{% block content %}
+
+<!-- ===== HERO SECTION (Matches Reference Image) ===== -->
+<section class="hero-modern">
+  <div class="hero-glow-bg"></div>
+
+  <div class="container hero-modern-container">
+    <div class="hero-grid">
+
+      <!-- LEFT: Hero Content & Search Card -->
+      <div class="hero-left">
+
+        <!-- REAL ESTATE Tag -->
+        <div class="hero-tag-wrap">
+          <span class="hero-tag-text">REAL ESTATE</span>
+        </div>
+
+        <!-- Headline (Matches screenshot) -->
+        <h1 class="hero-title">
+          Discover Your Future:<br>
+          <span class="hero-title-accent">Find The Perfect Property</span>
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="hero-description">
+          Explore a curated collection of luxury apartments, modern architectural villas, and premier rental residences. Verified owners, transparent terms, and effortless booking.
+        </p>
+
+        <!-- Explore Now Pill Button -->
+        <div class="hero-cta-wrap">
+          <a href="{% url 'property_list' %}" class="btn-explore-pill">
+            Explore Now
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
+        </div>
+
+        
+
+      </div>
+
+      <!-- RIGHT: Isometric 3D Modern Architecture Building Image -->
+      <div class="hero-right">
+        <div class="hero-building-container">
+          <div class="building-ambient-glow"></div>
+          <img src="{% static 'images/hero-building.png' %}"
+               alt="Luxury Modern Architecture Villa"
+               class="hero-building-img"
+               loading="eager">
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== FEATURED PROPERTIES ===== -->
+<section class="section section-dark">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">Featured Listings</span>
+      <h2 class="section-title">Handpicked Properties for You</h2>
+      <p class="section-desc">Explore our latest luxury rentals and premier spaces across top cities.</p>
+    </div>
+
+    {% if featured_properties %}
+      <div class="property-grid">
+        {% for property in featured_properties %}
+        <article class="property-card">
+          <!-- Image -->
+          <div class="property-card-img-wrap">
+            {% if property.image %}
+              <img src="{{ property.image.url }}" alt="{{ property.title }}" loading="lazy">
+            {% else %}
+              <div class="img-placeholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span>No Photo Available</span>
+              </div>
+            {% endif %}
+            <span class="property-type-badge">{{ property.get_property_type_display }}</span>
+            {% if property.is_available %}
+              <span class="availability-badge badge-available">Available</span>
+            {% else %}
+              <span class="availability-badge badge-unavailable">Not Available</span>
+            {% endif %}
+          </div>
+
+          <!-- Body -->
+          <div class="property-card-body">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; margin-bottom:0.35rem;">
+              <h3 class="property-card-title" style="margin-bottom:0;">{{ property.title }}</h3>
+              {% if property.average_rating %}
+                <span style="color:#d4af37; font-weight:700; font-size:0.85rem; display:inline-flex; align-items:center; gap:2px; flex-shrink:0;">
+                  ★ {{ property.average_rating }}
+                </span>
+              {% endif %}
+            </div>
+            <p class="property-card-location">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              {{ property.location }}
+            </p>
+            <div class="property-card-meta">
+              <span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/>
+                </svg>
+                {{ property.bedrooms }} BHK
+              </span>
+              <span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/>
+                  <path d="M9 6v11"/><path d="M9 6h7.14a2 2 0 0 1 1.99 1.81l.407 5.08A1 1 0 0 1 17.535 14H9"/>
+                </svg>
+                {{ property.bathrooms }} Bath
+              </span>
+            </div>
+            <div class="property-card-footer">
+              <div>
+                <div class="property-price">₹{{ property.rent|floatformat:0 }}<small>/mo</small></div>
+              </div>
+              <a href="{% url 'property_detail' property.pk %}" class="btn btn-outline btn-sm">View Details</a>
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+
+      <div style="text-align:center; margin-top:3.5rem;">
+        <a href="{% url 'property_list' %}" class="btn btn-primary btn-lg">
+          View All Properties
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+        <h3>No Properties Listed</h3>
+        <p>Curated residences are added regularly. Check back soon or list your own property with RentEase.</p>
+        <a href="{% url 'add_property' %}" class="btn btn-primary">List a Property</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ===== BENEFITS / WHY RENTEASE ===== -->
+<section class="section section-surface">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">Why Choose RentEase</span>
+      <h2 class="section-title">The New Standard in Rental Living</h2>
+      <p class="section-desc">Experience a transparent, seamless, and refined property journey from discovery to move-in.</p>
+    </div>
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <div class="benefit-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+          </svg>
+        </div>
+        <h3 class="benefit-title">Verified Luxury Residences</h3>
+        <p class="benefit-desc">Every property is posted with verified details, authentic photography, and transparent pricing with no hidden surprises.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
+          </svg>
+        </div>
+        <h3 class="benefit-title">Direct Booking Requests</h3>
+        <p class="benefit-desc">Send formal booking requests directly to property owners in seconds. Specify your move-in date and duration seamlessly.</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+          </svg>
+        </div>
+        <h3 class="benefit-title">Real-Time Status &amp; Updates</h3>
+        <p class="benefit-desc">Track all your booking requests with live status notifications. Instant alerts when owners confirm or review your application.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section class="section section-dark">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-label">How It Works</span>
+      <h2 class="section-title">Three Steps to Your Dream Space</h2>
+      <p class="section-desc">Finding and securing your ideal property is straightforward and effortless.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-item">
+        <div class="step-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+        </div>
+        <div class="step-num">Step 01</div>
+        <h3 class="step-title">Discover Properties</h3>
+        <p class="step-desc">Filter by location, rent budget, property architecture, and bedrooms to find spaces that match your lifestyle.</p>
+      </div>
+      <div class="step-item">
+        <div class="step-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </div>
+        <div class="step-num">Step 02</div>
+        <h3 class="step-title">Explore Details</h3>
+        <p class="step-desc">View high-resolution photography, floor plans, amenity lists, and direct owner profiles to make confident decisions.</p>
+      </div>
+      <div class="step-item">
+        <div class="step-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6.29 6.29l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+        </div>
+        <div class="step-num">Step 03</div>
+        <h3 class="step-title">Book Effortlessly</h3>
+        <p class="step-desc">Submit your move-in request with one click. Communicate with the verified host and lock in your new residence.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== OWNER CTA ===== -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Are You a Property Owner?</h2>
+    <p>Showcase your property to thousands of qualified tenants across India with zero upfront fees.</p>
+    <div style="display:flex;gap:1.25rem;justify-content:center;flex-wrap:wrap;position:relative;z-index:2;">
+      {% if request.user.is_authenticated %}
+        <a href="{% url 'add_property' %}" class="cta-btn-white">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          List a Property
+        </a>
+        <a href="{% url 'owner_dashboard' %}" class="btn btn-ghost btn-lg">
+          Go to Dashboard
+        </a>
+      {% else %}
+        <a href="{% url 'register' %}" class="cta-btn-white">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Get Started Free
+        </a>
+        <a href="{% url 'property_list' %}" class="btn btn-ghost btn-lg">
+          Browse Properties
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function setSearchTab(mode) {
+    const buyTab = document.getElementById('tab-buy');
+    const rentTab = document.getElementById('tab-rent');
+    const locInput = document.getElementById('hero-location');
+
+    if (mode === 'buy') {
+      buyTab.classList.add('active');
+      rentTab.classList.remove('active');
+      locInput.placeholder = "Search luxury villas, penthouses, estates…";
+    } else {
+      rentTab.classList.add('active');
+      buyTab.classList.remove('active');
+      locInput.placeholder = "City, neighbourhood, or landmark…";
+    }
+  }
+</script>
+{% endblock %}

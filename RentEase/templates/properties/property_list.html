@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Explore Luxury Properties — RentEase{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="page-header">
+  <div class="container">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.25rem;">
+      <div>
+        <span class="section-label">Curated Portfolio</span>
+        <h1>Explore Properties</h1>
+        <p>
+          {% if has_filters %}
+            Showing <strong>{{ total_count }}</strong> verified residence{{ total_count|pluralize }} matching your criteria.
+          {% else %}
+            Discover {{ total_count }} luxury rental listing{{ total_count|pluralize }} available across India.
+          {% endif %}
+        </p>
+      </div>
+      {% if has_filters %}
+        <a href="{% url 'property_list' %}" class="btn btn-ghost btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Clear Filters
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="container" style="padding-top:0; padding-bottom:4rem;">
+
+  <!-- Filter Bar -->
+  <form method="get" action="{% url 'property_list' %}">
+    <div class="filter-bar">
+      <div class="filter-field">
+        <label for="f-location">Location / City</label>
+        <input type="text" id="f-location" name="location"
+               placeholder="e.g. Chandigarh, Bengaluru..."
+               value="{{ location }}" autocomplete="off">
+      </div>
+      <div class="filter-field">
+        <label for="f-rent">Max Rent (₹/mo)</label>
+        <input type="number" id="f-rent" name="max_rent"
+               placeholder="e.g. 50000"
+               value="{{ max_rent }}" min="0">
+      </div>
+      <div class="filter-field">
+        <label for="f-type">Property Type</label>
+        <select id="f-type" name="property_type">
+          <option value="">All Types</option>
+          {% for val, label in property_type_choices %}
+            <option value="{{ val }}" {% if property_type == val %}selected{% endif %}>
+              {{ label }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="f-beds">Min. Bedrooms</label>
+        <input type="number" id="f-beds" name="min_bedrooms"
+               placeholder="e.g. 2"
+               value="{{ min_bedrooms }}" min="0" max="20">
+      </div>
+      <div>
+        <button type="submit" class="btn btn-primary" style="padding:0.75rem 1.6rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Filter
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Results Grid -->
+  {% if page_obj.object_list %}
+    <div class="property-grid">
+      {% for property in page_obj %}
+      <article class="property-card">
+        <!-- Image -->
+        <div class="property-card-img-wrap">
+          {% if property.image %}
+            <img src="{{ property.image.url }}" alt="{{ property.title }}" loading="lazy">
+          {% else %}
+            <div class="img-placeholder">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              <span>No Photo</span>
+            </div>
+          {% endif %}
+          <span class="property-type-badge">{{ property.get_property_type_display }}</span>
+          {% if property.is_available %}
+            <span class="availability-badge badge-available">Available</span>
+          {% else %}
+            <span class="availability-badge badge-unavailable">Unavailable</span>
+          {% endif %}
+        </div>
+
+        <!-- Body -->
+        <div class="property-card-body">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; margin-bottom:0.35rem;">
+            <h2 class="property-card-title" style="margin-bottom:0;">{{ property.title }}</h2>
+            {% if property.average_rating %}
+              <span style="color:#d4af37; font-weight:700; font-size:0.85rem; display:inline-flex; align-items:center; gap:2px; flex-shrink:0;">
+                ★ {{ property.average_rating }}
+              </span>
+            {% endif %}
+          </div>
+          <p class="property-card-location">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            {{ property.location }}
+          </p>
+
+          <div class="property-card-meta">
+            <span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/>
+              </svg>
+              {{ property.bedrooms }} Bed{{ property.bedrooms|pluralize }}
+            </span>
+            <span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/>
+              </svg>
+              {{ property.bathrooms }} Bath{{ property.bathrooms|pluralize }}
+            </span>
+            <span>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+              </svg>
+              {{ property.created_at|timesince }} ago
+            </span>
+          </div>
+
+          <div class="property-card-footer">
+            <div>
+              <div class="property-price">₹{{ property.rent|floatformat:0 }}<small>/mo</small></div>
+            </div>
+            <a href="{% url 'property_detail' property.pk %}" class="btn btn-outline btn-sm">View Details</a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+        <a href="?{% if location %}location={{ location }}&{% endif %}{% if max_rent %}max_rent={{ max_rent }}&{% endif %}{% if property_type %}property_type={{ property_type }}&{% endif %}{% if min_bedrooms %}min_bedrooms={{ min_bedrooms }}&{% endif %}page={{ page_obj.previous_page_number }}"
+           class="page-link">← Prev</a>
+      {% else %}
+        <span class="page-link disabled">← Prev</span>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <span class="page-link active">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <a href="?{% if location %}location={{ location }}&{% endif %}{% if max_rent %}max_rent={{ max_rent }}&{% endif %}{% if property_type %}property_type={{ property_type }}&{% endif %}{% if min_bedrooms %}min_bedrooms={{ min_bedrooms }}&{% endif %}page={{ num }}"
+             class="page-link">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <a href="?{% if location %}location={{ location }}&{% endif %}{% if max_rent %}max_rent={{ max_rent }}&{% endif %}{% if property_type %}property_type={{ property_type }}&{% endif %}{% if min_bedrooms %}min_bedrooms={{ min_bedrooms }}&{% endif %}page={{ page_obj.next_page_number }}"
+           class="page-link">Next →</a>
+      {% else %}
+        <span class="page-link disabled">Next →</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  {% else %}
+    <!-- Empty State -->
+    <div class="empty-state form-card" style="margin-top:2rem;">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <h3>No Properties Found</h3>
+      <p>
+        {% if has_filters %}
+          No listings match your current filters. Try broadening your search or adjusting the price range.
+        {% else %}
+          No properties are currently available. Check back soon or list your own space.
+        {% endif %}
+      </p>
+      <div style="display:flex; justify-content:center; gap:0.75rem; margin-top:1rem;">
+        {% if has_filters %}
+          <a href="{% url 'property_list' %}" class="btn btn-outline">Clear Filters</a>
+        {% endif %}
+        {% if request.user.is_authenticated %}
+          <a href="{% url 'add_property' %}" class="btn btn-primary">List a Property</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

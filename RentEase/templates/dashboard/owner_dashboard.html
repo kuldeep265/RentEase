@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}Owner Dashboard — RentEase Luxury Real Estate{% endblock %}
+
+{% block content %}
+
+<!-- Dashboard Header -->
+<div class="page-header" style="padding: 3.5rem 0 2.5rem;">
+  <div class="container">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.25rem;">
+      <div>
+        <p style="font-size:0.8rem; color:var(--color-primary-light); text-transform:uppercase; letter-spacing:2px; font-weight:700; margin-bottom:0.35rem;">Owner Dashboard</p>
+        <h1 style="font-size:2rem; font-weight:800; color:#ffffff;">
+          Welcome, {{ request.user.first_name|default:request.user.username }}!
+        </h1>
+        <p style="color:#94a3b8; margin-top:0.35rem;">Manage your portfolio, active listings, and client booking requests.</p>
+      </div>
+      <a href="{% url 'add_property' %}" class="btn btn-primary btn-lg" style="gap:0.5rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Property
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="padding-top:1.5rem; padding-bottom:4rem;">
+
+  <!-- Stats Row -->
+  <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:2.5rem;">
+    <div class="stat-card">
+      <div class="stat-card-icon stat-icon-green">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <div class="stat-label">Total Listings</div>
+        <div class="stat-value">{{ total_properties }}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-icon stat-icon-blue">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <div class="stat-label">Total Bookings</div>
+        <div class="stat-value">{{ total_bookings }}</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-icon stat-icon-amber">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <div class="stat-label">Pending Requests</div>
+        <div class="stat-value">{{ pending_bookings }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MY PROPERTIES ===== -->
+  <div class="table-card" style="margin-bottom:2.5rem;">
+    <div style="padding:1.25rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between;">
+      <h2 style="font-size:1.15rem; font-weight:700; color:#ffffff;">My Properties</h2>
+      <a href="{% url 'add_property' %}" class="btn btn-primary btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add New
+      </a>
+    </div>
+
+    {% if my_properties %}
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Location</th>
+              <th>Type</th>
+              <th>Rent / mo</th>
+              <th>Rooms</th>
+              <th>Status</th>
+              <th>Listed</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for prop in my_properties %}
+            <tr>
+              <td>
+                <div style="display:flex; align-items:center; gap:0.85rem;">
+                  {% if prop.image %}
+                    <img src="{{ prop.image.url }}" alt="{{ prop.title }}"
+                         style="width:48px;height:40px;object-fit:cover;border-radius:8px;flex-shrink:0;">
+                  {% else %}
+                    <div style="width:48px;height:40px;background:#1b1b24;border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                    </div>
+                  {% endif %}
+                  <div>
+                    <a href="{% url 'property_detail' prop.pk %}"
+                       style="font-weight:700; color:#ffffff; font-size:0.92rem;">
+                      {{ prop.title|truncatechars:35 }}
+                    </a>
+                    <div style="font-size:0.78rem; color:#94a3b8; margin-top:2px;">
+                      {{ prop.bedrooms }} BHK · {{ prop.bathrooms }} Bath
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td style="font-size:0.88rem; color:#cbd5e1;">{{ prop.location }}</td>
+              <td style="font-size:0.88rem; color:#cbd5e1;">{{ prop.get_property_type_display }}</td>
+              <td style="font-weight:800; color:var(--color-primary-light); font-size:0.95rem;">₹{{ prop.rent|floatformat:0 }}</td>
+              <td>
+                <!-- Available / Total rooms with colour coding -->
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1rem;
+                    color:{% if prop.available_rooms > 2 %}#4ade80{% elif prop.available_rooms == 1 %}#f97316{% else %}#ef4444{% endif %};">
+                    {{ prop.available_rooms }}/{{ prop.total_rooms }}
+                  </span>
+                  <span style="font-size:0.72rem; color:#64748b;">available</span>
+                </div>
+              </td>
+              <td>
+                {% if prop.is_available %}
+                  <span class="status-badge badge-available">Available</span>
+                {% else %}
+                  <span class="status-badge badge-unavailable">Full</span>
+                {% endif %}
+              </td>
+              <td style="font-size:0.82rem; color:#94a3b8;">{{ prop.created_at|date:"d M Y" }}</td>
+              <td>
+                <div style="display:flex; gap:0.4rem;">
+                  <a href="{% url 'edit_property' prop.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+                  <a href="{% url 'delete_property' prop.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state" style="padding:3.5rem;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        </svg>
+        <h3>No Properties Listed Yet</h3>
+        <p>Add your first property to start receiving booking requests.</p>
+        <a href="{% url 'add_property' %}" class="btn btn-primary">Add Your First Property</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ===== ACTIVE TENANTS (approved + not checked out) ===== -->
+  {% if active_bookings %}
+  <div class="table-card" style="margin-bottom:2.5rem;">
+    <div style="padding:1.25rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:0.75rem;">
+      <h2 style="font-size:1.15rem; font-weight:700; color:#ffffff;">Active Tenants</h2>
+      <span style="font-size:0.75rem; background:rgba(74,222,128,0.12); color:#4ade80; border:1px solid rgba(74,222,128,0.25); border-radius:9999px; padding:2px 10px; font-weight:700;">
+        {{ active_bookings|length }} occupied
+      </span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Tenant Name</th>
+            <th>Contact</th>
+            <th>Move-in</th>
+            <th>Duration</th>
+            <th>Expected Checkout</th>
+            <th>Paid</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for booking in active_bookings %}
+          <tr>
+            <td>
+              <a href="{% url 'property_detail' booking.property.pk %}"
+                 style="font-weight:700; font-size:0.9rem; color:#ffffff;">
+                {{ booking.property.title|truncatechars:28 }}
+              </a>
+            </td>
+            <td style="font-size:0.88rem; color:#cbd5e1;">
+              {{ booking.get_tenant_display_name }}
+              <div style="font-size:0.75rem; color:#94a3b8;">@{{ booking.tenant.username }}</div>
+            </td>
+            <td>
+              {% if booking.tenant_contact %}
+                <a href="tel:{{ booking.tenant_contact }}"
+                   style="font-size:0.88rem; color:var(--color-primary-light); font-weight:600; text-decoration:none;">
+                  📞 {{ booking.tenant_contact }}
+                </a>
+              {% else %}
+                <span style="color:#64748b; font-size:0.82rem;">—</span>
+              {% endif %}
+            </td>
+            <td style="font-size:0.88rem; color:#cbd5e1;">{{ booking.start_date|date:"d M Y" }}</td>
+            <td style="font-size:0.88rem; color:#cbd5e1;">{{ booking.duration_display }}</td>
+            <td style="font-size:0.88rem; color:#94a3b8;">
+              {% if booking.end_date %}{{ booking.end_date|date:"d M Y" }}{% else %}—{% endif %}
+            </td>
+            <td>
+              {% if booking.payment_amount %}
+                <span style="font-family:'Outfit',sans-serif; font-weight:700; color:#4ade80; font-size:0.92rem;">
+                  ₹{{ booking.payment_amount|floatformat:0 }}
+                </span>
+              {% else %}
+                <span style="color:#64748b; font-size:0.82rem;">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <form method="post" action="{% url 'checkout_booking' booking.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline"
+                        style="color:#4ade80; border-color:#4ade80;"
+                        onclick="return confirm('Mark {{ booking.get_tenant_display_name }} as checked out?');">
+                  ✓ Checkout
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ===== RECENT BOOKING REQUESTS ===== -->
+  <div class="table-card">
+    <div style="padding:1.25rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+      <h2 style="font-size:1.15rem; font-weight:700; color:#ffffff;">Recent Booking Requests</h2>
+    </div>
+
+    {% if recent_bookings %}
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Tenant</th>
+              <th>Contact</th>
+              <th>Move-in</th>
+              <th>Duration</th>
+              <th>Paid</th>
+              <th>Status</th>
+              <th>Requested</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for booking in recent_bookings %}
+            <tr>
+              <td>
+                <a href="{% url 'property_detail' booking.property.pk %}"
+                   style="font-weight:700; font-size:0.9rem; color:#ffffff;">
+                  {{ booking.property.title|truncatechars:28 }}
+                </a>
+              </td>
+              <td style="font-size:0.88rem; color:#cbd5e1;">
+                {{ booking.get_tenant_display_name }}
+                <div style="font-size:0.75rem; color:#94a3b8;">@{{ booking.tenant.username }}</div>
+              </td>
+              <td>
+                {% if booking.tenant_contact %}
+                  <a href="tel:{{ booking.tenant_contact }}"
+                     style="font-size:0.85rem; color:var(--color-primary-light); font-weight:600; text-decoration:none; white-space:nowrap;">
+                    📞 {{ booking.tenant_contact }}
+                  </a>
+                {% else %}
+                  <span style="color:#64748b; font-size:0.82rem;">—</span>
+                {% endif %}
+              </td>
+              <td style="font-size:0.88rem; color:#cbd5e1;">{{ booking.start_date|date:"d M Y" }}</td>
+              <td style="font-size:0.88rem; color:#cbd5e1;">{{ booking.duration_display }}</td>
+              <td>
+                {% if booking.payment_amount %}
+                  <span style="font-family:'Outfit',sans-serif; font-weight:700; color:#4ade80; font-size:0.9rem;">
+                    ₹{{ booking.payment_amount|floatformat:0 }}
+                  </span>
+                {% else %}
+                  <span style="color:#64748b; font-size:0.82rem;">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="status-badge status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+                {% if booking.checked_out %}
+                  <div style="font-size:0.72rem; color:#4ade80; margin-top:3px;">
+                    Checked out {{ booking.checkout_date|date:"d M Y" }}
+                  </div>
+                {% endif %}
+              </td>
+              <td style="font-size:0.82rem; color:#94a3b8;">{{ booking.created_at|date:"d M Y" }}</td>
+              <td>
+                {% if booking.status == 'pending' %}
+                  <div style="display:flex; gap:0.4rem;">
+                    <form method="post" action="{% url 'manage_booking' booking.pk %}" style="display:inline;">
+                      {% csrf_token %}
+                      <button type="submit" name="action" value="approve"
+                              class="btn btn-sm btn-primary" style="padding:0.35rem 0.85rem;">
+                        ✓ Approve
+                      </button>
+                    </form>
+                    <form method="post" action="{% url 'manage_booking' booking.pk %}" style="display:inline;">
+                      {% csrf_token %}
+                      <button type="submit" name="action" value="reject"
+                              class="btn btn-danger btn-sm" style="padding:0.35rem 0.85rem;">
+                        ✕ Reject
+                      </button>
+                    </form>
+                  </div>
+                {% else %}
+                  <span style="font-size:0.82rem; color:#64748b;">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state" style="padding:3rem;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+        </svg>
+        <h3>No Booking Requests Yet</h3>
+        <p>Booking requests for your listed properties will appear here.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookings — RentEase Luxury Real Estate{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <span class="section-label">Client Portal</span>
+    <h1>My Booking Requests</h1>
+    <p>Track and manage your rental requests and confirmations.</p>
+  </div>
+</div>
+
+<div class="container" style="padding-bottom:4rem; max-width:960px;">
+
+  {% if bookings %}
+    <div style="display:flex; flex-direction:column; gap:1.25rem;">
+      {% for booking in bookings %}
+      <div class="booking-card">
+
+        <!-- Property Thumbnail -->
+        {% if booking.property.image %}
+          <img src="{{ booking.property.image.url }}" alt="{{ booking.property.title }}"
+               class="booking-thumb" style="object-fit:cover;">
+        {% else %}
+          <div class="booking-thumb" style="display:flex;align-items:center;justify-content:center;background:#181822;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            </svg>
+          </div>
+        {% endif %}
+
+        <!-- Booking Details -->
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+            <div>
+              <a href="{% url 'property_detail' booking.property.pk %}"
+                 style="font-weight:700; font-size:1.05rem; color:#ffffff;">
+                {{ booking.property.title }}
+              </a>
+              <p style="font-size:0.86rem; color:#94a3b8; margin-top:0.25rem;">
+                📍 {{ booking.property.location }}
+              </p>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+              <span class="status-badge status-{{ booking.status }}">
+                {{ booking.get_status_display }}
+              </span>
+              {% if booking.checked_out %}
+                <span style="font-size:0.72rem; color:#4ade80; font-weight:600;">
+                  ✓ Checked out {{ booking.checkout_date|date:"d M Y" }}
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Contact info row (shown to tenant as confirmation of what they submitted) -->
+          {% if booking.tenant_contact or booking.tenant_full_name %}
+          <div style="margin-top:0.75rem; padding:0.65rem 0.9rem; background:rgba(197,139,84,0.06); border:1px solid rgba(197,139,84,0.15); border-radius:8px; display:flex; gap:1.5rem; flex-wrap:wrap;">
+            {% if booking.tenant_full_name %}
+            <div style="font-size:0.82rem; color:#94a3b8;">
+              <strong style="color:#cbd5e1;">Name:</strong> {{ booking.tenant_full_name }}
+            </div>
+            {% endif %}
+            {% if booking.tenant_contact %}
+            <div style="font-size:0.82rem; color:#94a3b8;">
+              <strong style="color:#cbd5e1;">Contact:</strong> {{ booking.tenant_contact }}
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Date / duration / rent row -->
+          <div style="display:flex; gap:1.5rem; margin-top:0.85rem; flex-wrap:wrap;">
+            <div style="font-size:0.84rem; color:#94a3b8;">
+              <strong style="color:#ffffff;">Move-in:</strong>
+              {{ booking.start_date|date:"d M Y" }}
+            </div>
+            <div style="font-size:0.84rem; color:#94a3b8;">
+              <strong style="color:#ffffff;">Duration:</strong>
+              {{ booking.duration_display }}
+            </div>
+            {% if booking.end_date %}
+            <div style="font-size:0.84rem; color:#94a3b8;">
+              <strong style="color:#ffffff;">Expected Checkout:</strong>
+              {{ booking.end_date|date:"d M Y" }}
+            </div>
+            {% endif %}
+            <div style="font-size:0.84rem; color:#94a3b8;">
+              <strong style="color:#ffffff;">Requested:</strong>
+              {{ booking.created_at|date:"d M Y" }}
+            </div>
+            <div style="font-size:0.84rem; color:#94a3b8;">
+              <strong style="color:var(--color-primary-light);">Rent:</strong>
+              ₹{{ booking.property.rent|floatformat:0 }}/mo
+            </div>
+            {% if booking.payment_amount %}
+            <div style="font-size:0.84rem; color:#94a3b8;">
+              <strong style="color:#4ade80;">Paid:</strong>
+              ₹{{ booking.payment_amount|floatformat:0 }}
+            </div>
+            {% endif %}
+          </div>
+
+          {% if booking.message %}
+            <p style="font-size:0.84rem; color:#94a3b8; margin-top:0.6rem; font-style:italic;">
+              "{{ booking.message|truncatechars:100 }}"
+            </p>
+          {% endif %}
+
+          <div style="margin-top:0.85rem;">
+            <a href="{% url 'property_detail' booking.property.pk %}#reviews"
+               class="btn btn-outline btn-sm" style="font-size:0.8rem; padding:0.35rem 0.85rem;">
+              ★ Rate &amp; Review Property
+            </a>
+          </div>
+        </div>
+
+        <!-- Cancel button (pending or approved, not checked out) -->
+        {% if booking.status == 'pending' or booking.status == 'approved' and not booking.checked_out %}
+          <div style="flex-shrink:0;">
+            <form method="post" action="{% url 'cancel_booking' booking.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm"
+                      onclick="return confirm('Cancel this booking?');">
+                Cancel
+              </button>
+            </form>
+          </div>
+        {% endif %}
+
+      </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="empty-state form-card">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+        <path d="M9 14l2 2 4-4"/>
+      </svg>
+      <h3>No Booking Requests Yet</h3>
+      <p>You haven't submitted any booking requests yet. Discover our curated residences and submit your first reservation.</p>
+      <a href="{% url 'property_list' %}" class="btn btn-primary btn-lg" style="margin-top:1rem;">Explore Properties</a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

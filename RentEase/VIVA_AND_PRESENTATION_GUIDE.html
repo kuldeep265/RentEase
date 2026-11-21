@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RentEase — Viva & Presentation Master Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07070a;
+      --surface: #0e0e15;
+      --card: #13131c;
+      --border: rgba(255, 255, 255, 0.08);
+      --primary: #c58b54;
+      --primary-light: #e5b382;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --code-bg: #181824;
+      --accent-green: #10b981;
+      --accent-blue: #3b82f6;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Outfit', sans-serif;
+      color: #ffffff;
+      line-height: 1.25;
+    }
+    a { color: var(--primary-light); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--code-bg);
+      color: #f1f5f9;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 0.88em;
+      border: 1px solid var(--border);
+    }
+    pre code {
+      display: block;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      border-radius: 8px;
+      line-height: 1.5;
+    }
+
+    /* Layout */
+    .container { max-width: 1180px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .header {
+      background: linear-gradient(135deg, #181412 0%, #0d0d12 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 3.5rem 0;
+      text-align: center;
+      position: relative;
+    }
+    .header h1 { font-size: clamp(2.2rem, 4vw, 3.4rem); font-weight: 800; margin-bottom: 0.5rem; }
+    .header h1 span { color: var(--primary); }
+    .header p { color: var(--text-muted); font-size: 1.1rem; max-width: 650px; margin: 0 auto; }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: rgba(197, 139, 84, 0.15);
+      color: var(--primary-light);
+      border: 1px solid rgba(197, 139, 84, 0.3);
+      margin-bottom: 1rem;
+    }
+
+    /* Navigation Bar */
+    .nav-bar {
+      position: sticky;
+      top: 0;
+      background: rgba(7, 7, 10, 0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      padding: 0.75rem 0;
+    }
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .nav-links a {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: #ffffff; text-decoration: none; }
+
+    /* Sections */
+    section { margin-top: 3.5rem; scroll-margin-top: 80px; }
+    .section-title {
+      font-size: 1.85rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.75rem;
+    }
+    .section-title span.num {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: #ffffff;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 800;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    /* Slide Card */
+    .slide-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 3px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .speech-box {
+      background: rgba(197, 139, 84, 0.08);
+      border-left: 3px solid var(--primary);
+      padding: 1rem 1.25rem;
+      margin-top: 1rem;
+      border-radius: 0 8px 8px 0;
+      font-style: normal;
+      color: #cbd5e1;
+    }
+    .speech-box strong { color: var(--primary-light); }
+
+    /* Q&A Accordion Style */
+    .qa-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    .qa-header {
+      padding: 1.15rem 1.35rem;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border);
+    }
+    .qa-header:hover {
+      background: rgba(197, 139, 84, 0.08);
+    }
+    .qa-body {
+      padding: 1.35rem;
+      font-size: 0.95rem;
+      color: #cbd5e1;
+      line-height: 1.7;
+    }
+    .qa-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .tag-easy { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .tag-medium { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .tag-hard { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+    /* Grid & Tables */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .table-custom {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    .table-custom th, .table-custom td {
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+    .table-custom th {
+      background: rgba(255, 255, 255, 0.04);
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    /* Print styles */
+    @media print {
+      body { background: #ffffff !important; color: #000000 !important; }
+      .header, .nav-bar { display: none !important; }
+      .card, .qa-card { border: 1px solid #ccc !important; background: #fff !important; color: #000 !important; }
+      h1, h2, h3, h4 { color: #000000 !important; }
+      code { background: #eee !important; color: #000 !important; border: 1px solid #ddd !important; }
+      .speech-box { background: #f9f9f9 !important; border-left: 3px solid #888 !important; color: #333 !important; }
+    }
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container">
+      <div class="badge">Comprehensive Examination Prep</div>
+      <h1>RentEase <span>Presentation &amp; Viva</span> Guide</h1>
+      <p>Master your project presentation, live code demonstration, and ace all examiner questions covering Django MVT, ORM, Security, and Architecture.</p>
+    </div>
+  </header>
+
+  <!-- STICKY NAVIGATION -->
+  <nav class="nav-bar">
+    <div class="container" style="padding-top:0; padding-bottom:0;">
+      <ul class="nav-links">
+        <li><a href="#pitch">1. 60-Sec Pitch</a></li>
+        <li><a href="#slides">2. Presentation Script</a></li>
+        <li><a href="#demo">3. 5-Min Live Demo</a></li>
+        <li><a href="#architecture">4. Architecture &amp; ERD</a></li>
+        <li><a href="#viva-questions">5. Viva Q&amp;A (30 Questions)</a></li>
+        <li><a href="#cheatsheet">6. Cheat Sheet</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <!-- 1. ELEVATOR PITCH -->
+    <section id="pitch">
+      <h2 class="section-title"><span class="num">1</span> 60-Second Elevator Pitch (Opening Statement)</h2>
+      <div class="card">
+        <p style="font-size: 1.05rem; margin-bottom: 1rem; color: #f1f5f9;">
+          <em>When the examiner asks: <strong>"Can you introduce your project in 1 minute?"</strong> — speak clearly using this exact script:</em>
+        </p>
+        <div class="speech-box">
+          "Good morning/afternoon, Sir/Ma'am. Our project is <strong>RentEase</strong>, a full-stack property rental web application built using <strong>Python, Django, SQLite, and modern responsive CSS</strong>.<br><br>
+          In traditional rental markets, tenants face opaque prices, misleading listings, and unverified brokers. RentEase solves this by providing a direct, verified bridge between property owners and tenants.<br><br>
+          <strong>Key highlights include:</strong>
+          <ul style="margin: 0.5rem 0 0.5rem 1.5rem; line-height: 1.7;">
+            <li>A modern, responsive dark luxury interface with real-time multi-criteria filtering (location, price, property type, BHK).</li>
+            <li>Role-based workflows: Tenants submit dates and durations for booking requests, and leave verified ratings &amp; reviews for properties they've booked; Property owners manage listings and approve/reject applications from a dedicated dashboard.</li>
+            <li>Production-grade security implemented with Django's CSRF protection, server-side data validation, backend ownership authorization checks, review integrity enforcement, and PBKDF2 password hashing.</li>
+            <li>Automated test suite with <strong>39 unit tests</strong> ensuring high code reliability and stability."</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. PRESENTATION SLIDES & SPEECH SCRIPT -->
+    <section id="slides">
+      <h2 class="section-title"><span class="num">2</span> Slide-by-Slide Presentation Deck &amp; Spoken Script</h2>
+
+      <!-- Slide 1 -->
+      <div class="card">
+        <div class="card-title">
+          <span>Slide 1: Title &amp; Problem Statement</span>
+          <span class="slide-badge">Slide 01</span>
+        </div>
+        <p><strong>Slide Content:</strong> Project Name: RentEase | Subtitle: Luxury Rental Living Platform | Pain Points: Unverified listings, broker fees, communication friction.</p>
+        <div class="speech-box">
+          <strong>What to say:</strong> "To begin with, finding rental accommodations in metropolitan cities often involves deceptive middleman fees and non-transparent terms. RentEase was developed to provide a trustworthy platform where property owners directly list their residences and tenants submit booking requests with clear terms."
+        </div>
+      </div>
+
+      <!-- Slide 2 -->
+      <div class="card">
+        <div class="card-title">
+          <span>Slide 2: System Architecture &amp; Technology Stack</span>
+          <span class="slide-badge">Slide 02</span>
+        </div>
+        <p><strong>Slide Content:</strong> Architecture: Django MVT (Model-View-Template) | Backend: Python 3 &amp; Django 6 | Database: SQLite with Django ORM | Frontend: HTML5, Tailwind CSS, Custom Luxury CSS, Vanilla JS.</p>
+        <div class="speech-box">
+          <strong>What to say:</strong> "We utilized the Django MVT architecture. The <strong>Model</strong> handles database schema and validation through the Django ORM. The <strong>View</strong> executes business logic, security checks, and queries. The <strong>Template</strong> renders the frontend dynamically with server-side rendering for optimal speed and SEO."
+        </div>
+      </div>
+
+      <!-- Slide 3 -->
+      <div class="card">
+        <div class="card-title">
+          <span>Slide 3: User Roles &amp; Workflows</span>
+          <span class="slide-badge">Slide 03</span>
+        </div>
+        <div class="grid-2" style="margin-top: 0.75rem;">
+          <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <strong style="color: var(--primary-light);">1. Tenant Workflow:</strong>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.3rem;">Browse listings &rarr; Apply filters &rarr; View property specs &rarr; Authenticate &rarr; Send booking request (Date + Duration) &rarr; Track real-time approval status.</p>
+          </div>
+          <div style="background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+            <strong style="color: var(--primary-light);">2. Owner Workflow:</strong>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.3rem;">Login &rarr; Access Owner Dashboard &rarr; Publish new property with photos &rarr; Edit/Delete listings &rarr; Review pending tenant requests &rarr; Approve or Reject with 1 click.</p>
+          </div>
+        </div>
+        <div class="speech-box">
+          <strong>What to say:</strong> "Our platform cleanly separates responsibilities between tenants and owners while providing the administrator full oversight through Django's built-in Admin panel."
+        </div>
+      </div>
+
+      <!-- Slide 4 -->
+      <div class="card">
+        <div class="card-title">
+          <span>Slide 4: Database Entities &amp; Relationships</span>
+          <span class="slide-badge">Slide 04</span>
+        </div>
+        <p><strong>Slide Content:</strong> <code>User</code> (Django Auth) &harr; <code>Property</code> (1-to-Many) &harr; <code>Booking</code> &amp; <code>Review</code> (ForeignKeys to User &amp; Property) &plus; <code>ContactMessage</code>.</p>
+        <div class="speech-box">
+          <strong>What to say:</strong> "Our relational database design models key interactions with strict referential integrity. A User can own multiple Properties. Each Booking links one Tenant and one Property. The Review model enforces <code>unique_together = ('property', 'tenant')</code> so verified tenants can rate and review their stay with a 1–5 star rating without duplicate spam."
+        </div>
+      </div>
+
+      <!-- Slide 5 -->
+      <div class="card">
+        <div class="card-title">
+          <span>Slide 5: Security &amp; Data Integrity</span>
+          <span class="slide-badge">Slide 05</span>
+        </div>
+        <ul style="margin: 0.5rem 0 0.5rem 1.5rem; line-height: 1.7; font-size: 0.95rem;">
+          <li><strong>CSRF Protection:</strong> Enforced via <code>{% csrf_token %}</code> on all state-changing POST forms.</li>
+          <li><strong>SQL Injection Immunity:</strong> Django ORM uses parameterized SQL queries.</li>
+          <li><strong>Backend Ownership Checks:</strong> Validates <code>property.owner == request.user</code> in views, preventing IDOR (Insecure Direct Object References).</li>
+          <li><strong>Verified Review Integrity:</strong> Backend verifies booking existence before accepting ratings, and prevents owners from reviewing their own properties.</li>
+          <li><strong>Password Security:</strong> Passwords hashed using PBKDF2 with SHA-256 and cryptographic salts.</li>
+        </ul>
+        <div class="speech-box">
+          <strong>What to say:</strong> "Security was built-in from day one. We never rely purely on hiding buttons in HTML; the backend view explicitly checks whether the requesting user owns the property before allowing any edit operations, and strictly verifies booking existence before allowing rating submissions."
+        </div>
+      </div>
+
+      <!-- Slide 6 -->
+      <div class="card">
+        <div class="card-title">
+          <span>Slide 6: Automated Testing &amp; Verification</span>
+          <span class="slide-badge">Slide 06</span>
+        </div>
+        <p><strong>Slide Content:</strong> 39 Automated Unit Tests in <code>properties/tests.py</code> | 100% Passing | Coverage: URLs, Views, Models, Forms, Permissions, Booking Lifecycles, and Review Integrity.</p>
+        <div class="speech-box">
+          <strong>What to say:</strong> "To guarantee enterprise reliability, we implemented 39 automated unit tests that verify HTTP status codes, form validations, unauthorized access prevention, booking workflow state transitions, and verified rating permissions."
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 5-MINUTE LIVE DEMO SCRIPT -->
+    <section id="demo">
+      <h2 class="section-title"><span class="num">3</span> 5-Minute Live Demo Walkthrough (Step-by-Step)</h2>
+      <div class="card">
+        <p style="margin-bottom: 1rem; color: #f1f5f9;">
+          Follow these exact 5 steps during the live demo to show the examiner maximum functionality in minimal time:
+        </p>
+
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th style="width: 15%;">Step</th>
+              <th style="width: 35%;">Action to Perform on Screen</th>
+              <th style="width: 50%;">What to Say to the Examiner</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Step 1</strong></td>
+              <td>Open <code>http://127.0.0.1:8000/</code> in browser. Show Hero section and search bar.</td>
+              <td>"This is the RentEase homepage with our modern dark architectural interface. Here in the hero section, tenants can toggle between Buy and Rent, enter a city like 'Chandigarh', and specify max rent."</td>
+            </tr>
+            <tr>
+              <td><strong>Step 2</strong></td>
+              <td>Type 'Chandigarh' or click 'Search Properties'. Navigate to <code>/properties/</code>.</td>
+              <td>"Here on the Explore page, Django processes GET request query parameters. The ORM dynamically filters results using <code>icontains</code> and <code>lte</code> operators while keeping the URL bookmarkable."</td>
+            </tr>
+            <tr>
+              <td><strong>Step 3</strong></td>
+              <td>Click on any property card to view <code>/properties/&lt;id&gt;/</code>.</td>
+              <td>"On the Property Detail page, you can see high-resolution photography, bedroom/bathroom stats, amenities pills, and verified owner credentials. If unauthenticated, it prompts to sign in before booking."</td>
+            </tr>
+            <tr>
+              <td><strong>Step 4</strong></td>
+              <td>Sign in as a tenant and submit a booking request.</td>
+              <td>"Now logged in as a tenant, I select a move-in date and rental duration of 6 months. Upon submission, Django validates the data, creates a Booking record with status 'Pending', and displays a real-time toast alert."</td>
+            </tr>
+            <tr>
+              <td><strong>Step 5</strong></td>
+              <td>Log out and log in as an owner. Navigate to <code>/owner/dashboard/</code>.</td>
+              <td>"Switching to the owner account, we land on the Owner Dashboard. The owner sees portfolio statistics, all active listings, and the newly submitted booking request with 'Approve' and 'Reject' actions."</td>
+            </tr>
+            <tr>
+              <td><strong>Step 6</strong></td>
+              <td>Sign back in as tenant, open <code>/my-bookings/</code> and click 'Rate &amp; Review Property'.</td>
+              <td>"Notice this direct link to review booked properties. Because this tenant has a verified booking, they can leave a 1–5 star rating and feedback. The platform immediately updates the property's average rating dynamically."</td>
+            </tr>
+            <tr>
+              <td><strong>Step 7 (Admin)</strong></td>
+              <td>Open <code>/admin/</code> in a new tab. Show Django Admin.</td>
+              <td>"Finally, platform administrators have full visibility over users, properties, bookings, and verified reviews via the customized Django Admin panel."</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. ARCHITECTURE & ERD -->
+    <section id="architecture">
+      <h2 class="section-title"><span class="num">4</span> System Architecture &amp; Database Design</h2>
+
+      <div class="card">
+        <h3 style="font-size: 1.2rem; color: var(--primary-light); margin-bottom: 0.75rem;">1. The Django MVT Pattern</h3>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1rem;">
+          Django implements the <strong>Model-View-Template (MVT)</strong> design pattern:
+        </p>
+        <div class="grid-2">
+          <div style="background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border);">
+            <strong style="color: #ffffff;">Model (<code>properties/models.py</code>)</strong>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.35rem;">
+              The single source of truth for your data. Defines table schemas, field types, constraints (e.g. <code>MinValueValidator</code>), and custom methods like <code>get_amenities_list()</code>.
+            </p>
+          </div>
+          <div style="background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border);">
+            <strong style="color: #ffffff;">View (<code>properties/views.py</code>)</strong>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.35rem;">
+              The controller logic. Intercepts incoming <code>HttpRequest</code>, performs authentication and authorization checks, queries the ORM, and returns an <code>HttpResponse</code> or redirect.
+            </p>
+          </div>
+        </div>
+        <div style="background: rgba(255,255,255,0.02); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border); margin-top: 1rem;">
+          <strong style="color: #ffffff;">Template (<code>templates/*.html</code>)</strong>
+          <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.35rem;">
+            The presentation layer. Uses the Django Template Language (DTL) for template inheritance (<code>{% extends 'base.html' %}</code>), loops (<code>{% for %}</code>), and safe variable interpolation.
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size: 1.2rem; color: var(--primary-light); margin-bottom: 0.75rem;">2. Entity-Relationship Summary</h3>
+        <table class="table-custom">
+          <thead>
+            <tr>
+              <th>Entity</th>
+              <th>Key Fields</th>
+              <th>Relationships</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>User</strong> (Django Auth)</td>
+              <td><code>id</code>, <code>username</code>, <code>email</code>, <code>password</code>, <code>first_name</code>, <code>last_name</code></td>
+              <td>1-to-Many with <code>Property</code> (as owner)<br>1-to-Many with <code>Booking</code> (as tenant)</td>
+            </tr>
+            <tr>
+              <td><strong>Property</strong></td>
+              <td><code>id</code>, <code>title</code>, <code>description</code>, <code>location</code>, <code>rent</code>, <code>bedrooms</code>, <code>bathrooms</code>, <code>property_type</code>, <code>image</code>, <code>is_available</code></td>
+              <td><code>owner = ForeignKey(User, on_delete=CASCADE)</code><br>1-to-Many with <code>Booking</code></td>
+            </tr>
+            <tr>
+              <td><strong>Booking</strong></td>
+              <td><code>id</code>, <code>start_date</code>, <code>duration_months</code>, <code>message</code>, <code>status</code> ('pending', 'approved', 'rejected', 'cancelled'), <code>created_at</code></td>
+              <td><code>property = ForeignKey(Property, on_delete=CASCADE)</code><br><code>tenant = ForeignKey(User, on_delete=CASCADE)</code></td>
+            </tr>
+            <tr>
+              <td><strong>Review</strong></td>
+              <td><code>id</code>, <code>rating</code> (1–5), <code>comment</code>, <code>created_at</code>, <code>updated_at</code></td>
+              <td><code>property = ForeignKey(Property, on_delete=CASCADE)</code><br><code>tenant = ForeignKey(User, on_delete=CASCADE)</code><br><em>Unique together: (property, tenant)</em></td>
+            </tr>
+            <tr>
+              <td><strong>ContactMessage</strong></td>
+              <td><code>id</code>, <code>name</code>, <code>email</code>, <code>subject</code>, <code>message</code>, <code>submitted_at</code></td>
+              <td>Standalone enquiry entity</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. VIVA QUESTIONS & ANSWERS (30 QUESTIONS) -->
+    <section id="viva-questions">
+      <h2 class="section-title"><span class="num">5</span> Top 30 Viva Questions &amp; In-Depth Answers</h2>
+
+      <!-- CATEGORY A -->
+      <h3 style="color: var(--primary-light); margin: 2rem 0 1rem; font-size: 1.35rem;">Category A: Django Framework &amp; Core Architecture</h3>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q1: What is Django and why did you choose it over Flask or Node.js?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> Django is a high-level, batteries-included Python web framework designed for rapid and secure web development. We chose Django over Flask or Express because it includes built-in Object-Relational Mapping (ORM), robust user authentication, an automatic Admin interface, automated CSRF protection, and standardized directory structure out of the box, significantly reducing boilerplate code and security risks.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q2: What is the difference between MVC and MVT in Django?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> In traditional MVC (Model-View-Controller), the Controller handles user requests and dispatches data between Model and View. In Django's MVT (Model-View-Template):
+          <ul style="margin: 0.5rem 0 0 1.5rem;">
+            <li><strong>Model:</strong> Maps data structures to database tables (same as in MVC).</li>
+            <li><strong>View:</strong> Acts like the Controller in MVC; it processes requests, executes business logic, queries models, and selects templates.</li>
+            <li><strong>Template:</strong> Acts like the View in MVC; it produces the visual HTML output rendered to the client. The Django framework itself acts as the overarching controller routing URLs to views.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q3: What is the purpose of manage.py, settings.py, urls.py, and wsgi.py?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong>
+          <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.7;">
+            <li><code>manage.py</code>: CLI management script to run the local server, create migrations, execute test suites, and run custom management commands.</li>
+            <li><code>settings.py</code>: The centralized configuration file containing installed apps, database credentials, middleware, auth redirects, static/media paths, and security flags.</li>
+            <li><code>urls.py</code>: The master routing table mapping URL patterns to view functions using <code>path()</code>.</li>
+            <li><code>wsgi.py</code>: Web Server Gateway Interface entry point used by production web servers (e.g. Gunicorn/uWSGI) to serve the application.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q4: What is the difference between a Django Project and a Django App?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> A <strong>Project</strong> represents the entire website configuration (in our case, <code>rentease</code>), containing settings, master URLs, and WSGI handlers. An <strong>App</strong> is a self-contained, modular Python package that handles a specific domain of functionality (in our case, <code>properties</code>), containing its own models, views, forms, and tests. A single project can house multiple apps.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q5: Explain the HTTP Request-Response lifecycle in your application.</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong>
+          <ol style="margin: 0.5rem 0 0 1.5rem; line-height: 1.7;">
+            <li>The client browser sends an HTTP request to the web server.</li>
+            <li>Django's middleware stack processes the request (security checks, session decoding, user authentication).</li>
+            <li>The URL dispatcher in <code>urls.py</code> matches the request path with configured patterns.</li>
+            <li>The matching view function in <code>views.py</code> executes (handling GET/POST, querying ORM models).</li>
+            <li>The view renders a template or issues an <code>HttpResponseRedirect</code>.</li>
+            <li>Response middlewares process headers and cookies, returning the final HTTP response to the browser.</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- CATEGORY B -->
+      <h3 style="color: var(--primary-light); margin: 2rem 0 1rem; font-size: 1.35rem;">Category B: Models, Database &amp; Django ORM</h3>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q6: What is an ORM and what are its benefits?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> An Object-Relational Mapper (ORM) allows developers to interact with relational databases using object-oriented Python code instead of raw SQL queries. Benefits include: database engine portability (switch from SQLite to PostgreSQL without rewriting queries), automatic protection against SQL injection via parameterized queries, type validation, and clean relationship management through model properties.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q7: What does on_delete=models.CASCADE mean in your models?</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> In <code>properties/models.py</code>, <code>Property.owner</code> uses <code>on_delete=models.CASCADE</code>. This specifies that if a <code>User</code> record is deleted from the database, all <code>Property</code> listings owned by that user will automatically be deleted to prevent orphaned records. Similarly, deleting a Property cascades to delete its associated <code>Booking</code> requests.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q8: What is the difference between makemigrations and migrate?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong>
+          <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.7;">
+            <li><code>python manage.py makemigrations</code>: Inspects changes made in <code>models.py</code> and writes human-readable migration blueprint files in the <code>migrations/</code> directory without modifying the actual database tables.</li>
+            <li><code>python manage.py migrate</code>: Executes the pending migration files against the database, running the corresponding <code>CREATE TABLE</code> or <code>ALTER TABLE</code> SQL statements.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q9: How did you implement search and filtering using the ORM?</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> In <code>property_list</code> view (<code>views.py</code>), we chain Django ORM filter lookups based on GET parameters:
+          <code>properties = Property.objects.filter(is_available=True)</code><br>
+          If a location is passed: <code>properties.filter(location__icontains=location)</code> (case-insensitive substring matching).<br>
+          If max rent is passed: <code>properties.filter(rent__lte=float(max_rent))</code> (less than or equal to).<br>
+          Django ORM querysets are lazy; they are not evaluated against the database until iterated over in the template or paginator.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q10: What is the difference between auto_now and auto_now_add?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong>
+          <code>auto_now_add=True</code> sets the timestamp only once when the object is first created (used for <code>created_at</code>).<br>
+          <code>auto_now=True</code> updates the timestamp to the current time every time <code>save()</code> is called on the object (used for <code>updated_at</code>).
+        </div>
+      </div>
+
+      <!-- CATEGORY C -->
+      <h3 style="color: var(--primary-light); margin: 2rem 0 1rem; font-size: 1.35rem;">Category C: Views, Forms &amp; HTTP Methods</h3>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q11: Why did you use Function-Based Views (FBVs) over Class-Based Views (CBVs)?</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> Function-Based Views provide explicit, readable, step-by-step control over the HTTP request flow. In an academic examination setting, FBVs demonstrate an understanding of <code>HttpRequest</code> objects, manual form validation, explicit redirects, message dispatching, and fine-grained access checks without hiding logic behind complex multi-inheritance class mixins.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q12: What is the POST-Redirect-GET (PRG) pattern and why is it important?</span>
+          <span class="qa-tag tag-hard">Advanced</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> The PRG pattern is a web development design pattern that prevents duplicate form submissions. When a user submits a form via POST (e.g. adding a property or booking), the server processes the data, saves it, and immediately returns an HTTP 302 Redirect (GET) to another URL (like the dashboard or detail page). If the user subsequently refreshes the page, their browser re-requests the GET URL rather than re-submitting the POST data, avoiding duplicate database entries.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q13: What is the difference between forms.Form and forms.ModelForm?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong>
+          <code>forms.Form</code> is a generic form where you manually declare each field, its type, and its validation.<br>
+          <code>forms.ModelForm</code> is directly tied to a Django Model via an inner <code>class Meta</code>. It automatically generates form fields, widget types, labels, and validation rules based on the model's database definitions, and provides a <code>save()</code> method to persist data directly.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q14: How does get_object_or_404() work?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> <code>get_object_or_404(Model, pk=pk)</code> calls <code>Model.objects.get(pk=pk)</code>. If the record exists, it returns the instance. If the record does not exist, instead of raising an unhandled <code>Model.DoesNotExist</code> 500 server error, it cleanly raises a <code>django.http.Http404</code> exception, returning a standard 404 Not Found response to the user.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q15: How did you implement custom form validation in forms.py?</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> In <code>BookingForm</code>, we implemented <code>clean_start_date()</code> to ensure the selected move-in date is not in the past:
+          <code>if start_date < timezone.now().date(): raise forms.ValidationError("Move-in date cannot be in the past.")</code>. Django automatically executes field-specific <code>clean_&lt;field_name&gt;()</code> methods during <code>form.is_valid()</code>.
+        </div>
+      </div>
+
+      <!-- CATEGORY D -->
+      <h3 style="color: var(--primary-light); margin: 2rem 0 1rem; font-size: 1.35rem;">Category D: Security, Authentication &amp; Permissions</h3>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q16: How does CSRF protection work in Django?</span>
+          <span class="qa-tag tag-hard">Advanced</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> Cross-Site Request Forgery occurs when a malicious site tricks an authenticated user's browser into executing an unwanted action on another site. Django defends against this using the Synchronizer Token Pattern:
+          <ol style="margin: 0.5rem 0 0 1.5rem; line-height: 1.7;">
+            <li>Django sets a cryptographically secure random token in a cookie.</li>
+            <li>When rendering forms, <code>{% csrf_token %}</code> injects a hidden input containing this token.</li>
+            <li>On POST requests, <code>CsrfViewMiddleware</code> compares the form token with the cookie value. If they do not match or the token is missing, the request is rejected with an HTTP 403 Forbidden.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q17: What does the @login_required decorator do?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> The <code>@login_required</code> decorator wraps a view function and checks <code>request.user.is_authenticated</code>. If the user is logged in, the view executes normally. If anonymous, Django automatically redirects the browser to <code>LOGIN_URL</code> (<code>/accounts/login/</code>) with a query parameter <code>?next=&lt;current_path&gt;</code> so that upon successful login, the user is redirected back to their intended page.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q18: How do you prevent User A from editing or deleting User B's property?</span>
+          <span class="qa-tag tag-hard">Advanced</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> We enforce backend authorization checks in <code>edit_property</code> and <code>delete_property</code> views:
+          <pre><code>if property.owner != request.user:
+    messages.error(request, "You do not have permission to modify this property.")
+    return redirect('property_detail', pk=pk)</code></pre>
+          We never rely merely on hiding the "Edit" button in HTML templates, because an attacker could still forge a direct POST or URL request. Enforcing it in the view completely eliminates Insecure Direct Object Reference (IDOR) vulnerabilities.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q19: How are passwords stored and verified in Django?</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> Passwords are never stored in plain text. Django hashes them using the **PBKDF2 algorithm with a SHA-256 hash**, incorporating a unique cryptographic salt and thousands of hashing iterations. When a user logs in, Django hashes the provided password with the stored salt and compares the resulting hash; the original plain-text password cannot be decrypted even if the database is exposed.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q20: How does Django protect against Cross-Site Scripting (XSS)?</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> Django's Template Language automatically HTML-escapes all dynamic variables by default (converting <code>&lt;</code> to <code>&amp;lt;</code>, <code>&gt;</code> to <code>&amp;gt;</code>, quotes, and ampersands). This prevents malicious JavaScript submitted in form fields (like property descriptions or titles) from executing in another user's browser.
+        </div>
+      </div>
+
+      <!-- CATEGORY E -->
+      <h3 style="color: var(--primary-light); margin: 2rem 0 1rem; font-size: 1.35rem;">Category E: Frontend, Media &amp; Static Files</h3>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q21: What is the difference between STATIC files and MEDIA files in Django?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong>
+          <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.7;">
+            <li><strong>STATIC files</strong> (<code>STATIC_URL</code>, <code>STATICFILES_DIRS</code>): Static assets shipped with the codebase created by developers (CSS styles, JavaScript files, static UI logos, background illustrations).</li>
+            <li><strong>MEDIA files</strong> (<code>MEDIA_URL</code>, <code>MEDIA_ROOT</code>): Dynamic user-uploaded content created during runtime (e.g. photos uploaded by owners when adding properties via <code>ImageField</code>).</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q22: How does template inheritance work in base.html?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> <code>base.html</code> defines the global skeletal structure of the site (HTML head, custom CSS, navbar, alerts container, and footer) with placeholder tags like <code>{% block content %}{% endblock %}</code>. Child templates use <code>{% extends 'base.html' %}</code> and inject page-specific markup inside matching blocks, avoiding code duplication and ensuring consistent styling across all pages.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q23: How did you implement pagination for properties?</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> We used Django's built-in <code>Paginator</code> class in <code>properties/views.py</code>:
+          <code>paginator = Paginator(properties, 6)</code> (6 properties per page). We extract the current page via <code>request.GET.get('page')</code> and pass <code>page_obj</code> to the template. The template then renders Previous, Page Number, and Next links while preserving any active filter query parameters.
+        </div>
+      </div>
+
+      <!-- CATEGORY F -->
+      <h3 style="color: var(--primary-light); margin: 2rem 0 1rem; font-size: 1.35rem;">Category F: Testing &amp; Quality Assurance</h3>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q24: What is the purpose of automated testing in Django and what did your 39 tests cover?</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> Automated tests in <code>properties/tests.py</code> subclass <code>django.test.TestCase</code> to execute against a clean, isolated in-memory test database that is torn down after execution. Our 39 unit tests cover:
+          <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.7;">
+            <li>Public view availability (HTTP 200 on Home, About, Contact, Property List).</li>
+            <li>Search filtering logic (matching keywords and budget thresholds).</li>
+            <li>Authentication flows (registration, valid and invalid logins).</li>
+            <li>Access control (ensuring unauthenticated users cannot access owner dashboard or booking actions).</li>
+            <li>Ownership enforcement (verifying non-owners cannot edit or delete properties).</li>
+            <li>Booking lifecycle (submission, cancellation, and owner approval/rejection state transitions).</li>
+            <li>Verified review permissions (ensuring unbooked users and owners cannot review, while booked tenants can rate and update).</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q25: What command do you run to execute tests and what does OK signify?</span>
+          <span class="qa-tag tag-easy">Fundamental</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> Run <code>python manage.py test</code>. Django creates an isolated test database, runs all 39 test methods across test classes, outputs a dot <code>.</code> for every passing test, prints execution time, and outputs <code>OK</code> indicating zero failures and zero errors before automatically destroying the test database.
+        </div>
+      </div>
+
+      <!-- CATEGORY G -->
+      <h3 style="color: var(--primary-light); margin: 2rem 0 1rem; font-size: 1.35rem;">Category G: Rating, Reviews &amp; Trust Architecture</h3>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q26: How does the Rating and Review feature prevent fake reviews?</span>
+          <span class="qa-tag tag-hard">Advanced</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> RentEase enforces a strict backend booking-verification check: <code>Booking.objects.filter(property=property, tenant=request.user).exists()</code>. Only tenants who have actually submitted a booking for that property can submit reviews. Furthermore, owners cannot review their own properties (<code>property.owner == request.user</code>), and the <code>unique_together = ('property', 'tenant')</code> database constraint ensures each tenant can leave only one review per property (updating it if resubmitted).
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q27: How is the average property rating computed and rendered dynamically?</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> Rather than storing a redundant rating column that can become out of sync, the <code>Property</code> model exposes dynamic methods: <code>average_rating()</code> (which calculates the mean star value rounded to 1 decimal place) and <code>total_reviews()</code>. These methods are callable directly in templates (<code>{{ property.average_rating }}</code>) on both property cards and detail views, ensuring instant recalculation whenever a review is posted or modified.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q28: How does unique_together prevent duplicate reviews while allowing review updates?</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> In <code>properties/models.py</code>, the <code>Review</code> model declares <code>unique_together = ('property', 'tenant')</code>, creating a compound database UNIQUE index on <code>(property_id, tenant_id)</code>. In the view <code>add_review()</code>, Django checks for existing records: if a review exists, it updates the record's rating and comment; otherwise, it creates a new one. This prevents review spam while allowing tenants to easily update their feedback.
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q29: What automated unit tests did you write for the Review feature?</span>
+          <span class="qa-tag tag-hard">Advanced</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> We implemented <code>ReviewTest</code> in <code>properties/tests.py</code> containing 5 unit tests:
+          <ul style="margin: 0.5rem 0 0 1.5rem; line-height: 1.7;">
+            <li><code>test_anonymous_cannot_review</code>: Anonymous requests are redirected to <code>/accounts/login/</code>.</li>
+            <li><code>test_user_without_booking_cannot_review</code>: Users without bookings cannot submit reviews.</li>
+            <li><code>test_owner_cannot_review_own_property</code>: Property owners cannot rate their own listings.</li>
+            <li><code>test_verified_tenant_can_submit_review</code>: Booked tenants submit 1–5 stars and <code>average_rating()</code> recalculates dynamically.</li>
+            <li><code>test_verified_tenant_can_update_existing_review</code>: Subsequent reviews update existing rows without duplicates.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-card">
+        <div class="qa-header">
+          <span>Q30: How did you solve the select dropdown styling issue on Windows dark mode?</span>
+          <span class="qa-tag tag-medium">Intermediate</span>
+        </div>
+        <div class="qa-body">
+          <strong>Answer:</strong> In Chromium/Edge browsers on Windows, native <code>&lt;option&gt;</code> elements inherit <code>color: #ffffff</code> from dark mode select styles, but the OS popup menu defaults to a white background, creating unreadable white-on-white text. We resolved this by adding <code>color-scheme: dark;</code> to <code>:root</code> and styling <code>select option { background-color: #12121a !important; color: #ffffff !important; }</code> in <code>style.css</code>, guaranteeing dark popups and high-contrast options across all platforms.
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. CHEAT SHEET & QUICK-REFERENCE -->
+    <section id="cheatsheet">
+      <h2 class="section-title"><span class="num">6</span> Quick-Reference Viva Cheat Sheet (5 Minutes Before Exam)</h2>
+      <div class="card">
+        <div class="grid-2">
+          <div>
+            <h4 style="color: var(--primary-light); margin-bottom: 0.5rem;">Key Terminal Commands</h4>
+            <pre><code># Start server
+python manage.py runserver
+
+# Run test suite
+python manage.py test
+
+# Make & apply migrations
+python manage.py makemigrations
+python manage.py migrate
+
+# Create Admin superuser
+python manage.py createsuperuser</code></pre>
+          </div>
+          <div>
+            <h4 style="color: var(--primary-light); margin-bottom: 0.5rem;">Key Project Paths &amp; URLs</h4>
+            <ul style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.8; list-style: none;">
+              <li><code>/</code> &rarr; Homepage (Hero, Search, Featured)</li>
+              <li><code>/properties/</code> &rarr; Property catalog &amp; filters</li>
+              <li><code>/owner/dashboard/</code> &rarr; Owner dashboard</li>
+              <li><code>/my-bookings/</code> &rarr; Tenant booking status</li>
+              <li><code>/admin/</code> &rarr; Django Administrative panel</li>
+              <li><code>properties/models.py</code> &rarr; ORM data models</li>
+              <li><code>properties/views.py</code> &rarr; Business logic FBVs</li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
+          <h4 style="color: var(--primary-light); margin-bottom: 0.75rem;">Demo Login Credentials</h4>
+          <table class="table-custom" style="font-size: 0.9rem;">
+            <thead>
+              <tr>
+                <th>Role</th>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Privileges / Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Property Owner</strong></td>
+                <td><code>owner</code></td>
+                <td><code>Owner@1234</code></td>
+                <td>Owns all 10 listings; manages requests on Owner Dashboard</td>
+              </tr>
+              <tr>
+                <td><strong>Tenant User</strong></td>
+                <td><code>user</code></td>
+                <td><code>User@1234</code></td>
+                <td>Has 3 bookings; verified stay to rate &amp; review properties</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer style="text-align: center; padding: 3rem 0; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 0.85rem;">
+    RentEase — Comprehensive Viva &amp; Presentation Master Guide | Built for B.Tech Computer Science Examination
+  </footer>
+
+</body>
+</html>

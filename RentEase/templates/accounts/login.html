@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In — RentEase Luxury Real Estate{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+
+    <!-- Golden Architectural Crest Logo -->
+    <div style="text-align:center; margin-bottom:2rem;">
+      <div style="width:64px;height:64px;background:rgba(197,139,84,0.12);border:1px solid rgba(197,139,84,0.3);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+        <svg width="34" height="34" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 25 C12 12, 28 12, 32 25" stroke="#c58b54" stroke-width="2.2" stroke-linecap="round"/>
+          <rect x="13.5" y="15" width="2.4" height="11" rx="1.2" fill="#c58b54"/>
+          <rect x="17.5" y="11" width="2.4" height="15" rx="1.2" fill="#c58b54"/>
+          <rect x="21.5" y="11" width="2.4" height="15" rx="1.2" fill="#c58b54"/>
+          <rect x="25.5" y="15" width="2.4" height="11" rx="1.2" fill="#c58b54"/>
+          <path d="M6 29.5 C15 27, 25 27, 34 29.5" stroke="#c58b54" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h1>Welcome Back</h1>
+      <p class="subtitle">Sign in to your RentEase account to continue.</p>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-error" style="position:static; margin-bottom:1.25rem; max-width:100%;">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+        {{ form.username }}
+        {% for error in form.username.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+        {{ form.password }}
+        {% for error in form.password.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg" style="width:100%; justify-content:center; margin-top:0.75rem;">
+        Sign In
+      </button>
+    </form>
+
+    <p style="text-align:center; margin-top:1.75rem; font-size:0.92rem; color:#94a3b8;">
+      Don't have an account?
+      <a href="{% url 'register' %}" style="font-weight:600; color:var(--color-primary-light);">Create one</a>
+    </p>
+
+  </div>
+</div>
+{% endblock %}

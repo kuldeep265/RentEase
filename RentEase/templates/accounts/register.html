@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account — RentEase Luxury Real Estate{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+
+    <!-- Golden Architectural Crest Logo -->
+    <div style="text-align:center; margin-bottom:2rem;">
+      <div style="width:64px;height:64px;background:rgba(197,139,84,0.12);border:1px solid rgba(197,139,84,0.3);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+        <svg width="34" height="34" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 25 C12 12, 28 12, 32 25" stroke="#c58b54" stroke-width="2.2" stroke-linecap="round"/>
+          <rect x="13.5" y="15" width="2.4" height="11" rx="1.2" fill="#c58b54"/>
+          <rect x="17.5" y="11" width="2.4" height="15" rx="1.2" fill="#c58b54"/>
+          <rect x="21.5" y="11" width="2.4" height="15" rx="1.2" fill="#c58b54"/>
+          <rect x="25.5" y="15" width="2.4" height="11" rx="1.2" fill="#c58b54"/>
+          <path d="M6 29.5 C15 27, 25 27, 34 29.5" stroke="#c58b54" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h1>Create an Account</h1>
+      <p class="subtitle">Join RentEase to discover luxury properties and manage bookings.</p>
+    </div>
+
+    <!-- Non-field errors -->
+    {% if form.non_field_errors %}
+      <div class="alert alert-error" style="position:static; margin-bottom:1.25rem; max-width:100%;">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.85rem;">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.first_name.id_for_label }}">First Name</label>
+          {{ form.first_name }}
+          {% for error in form.first_name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.last_name.id_for_label }}">Last Name</label>
+          {{ form.last_name }}
+          {% for error in form.last_name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+        {{ form.username }}
+        {% for error in form.username.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.email.id_for_label }}">Email Address</label>
+        {{ form.email }}
+        {% for error in form.email.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.password1.id_for_label }}">Password</label>
+        {{ form.password1 }}
+        {% for error in form.password1.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.password2.id_for_label }}">Confirm Password</label>
+        {{ form.password2 }}
+        {% for error in form.password2.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg" style="width:100%; justify-content:center; margin-top:0.75rem;">
+        Create Account
+      </button>
+    </form>
+
+    <p style="text-align:center; margin-top:1.75rem; font-size:0.92rem; color:#94a3b8;">
+      Already have an account?
+      <a href="{% url 'login' %}" style="font-weight:600; color:var(--color-primary-light);">Sign In</a>
+    </p>
+
+  </div>
+</div>
+{% endblock %}

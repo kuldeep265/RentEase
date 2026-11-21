@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ action }} Property — RentEase Luxury Real Estate{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <div class="breadcrumb" style="margin-bottom:0.75rem;">
+      <a href="{% url 'owner_dashboard' %}">Dashboard</a>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <span>{{ action }} Property</span>
+    </div>
+    <h1>{{ action }} Property Listing</h1>
+    <p>Fill in the specifications below to {{ action|lower }} your luxury residence on RentEase.</p>
+  </div>
+</div>
+
+<div class="container" style="max-width:880px; padding-bottom:4rem;">
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- Non-field errors -->
+    {% if form.non_field_errors %}
+      <div class="alert alert-error" style="position:static; margin-bottom:1.5rem; max-width:100%;">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Section: Basic Info -->
+    <div class="form-card" style="margin-bottom:1.75rem;">
+      <h2 style="font-size:1.15rem; font-weight:700; color:#ffffff; margin-bottom:1.5rem; padding-bottom:0.85rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+        📋 Basic Information
+      </h2>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.title.id_for_label }}">Property Title <span class="required">*</span></label>
+        {{ form.title }}
+        {% for error in form.title.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.description.id_for_label }}">Description <span class="required">*</span></label>
+        {{ form.description }}
+        {% for error in form.description.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem;">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.location.id_for_label }}">Location / City <span class="required">*</span></label>
+          {{ form.location }}
+          {% for error in form.location.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.property_type.id_for_label }}">Property Type <span class="required">*</span></label>
+          {{ form.property_type }}
+          {% for error in form.property_type.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Pricing & Specs -->
+    <div class="form-card" style="margin-bottom:1.75rem;">
+      <h2 style="font-size:1.15rem; font-weight:700; color:#ffffff; margin-bottom:1.5rem; padding-bottom:0.85rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+        💰 Pricing &amp; Specifications
+      </h2>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.25rem;">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.rent.id_for_label }}">Monthly Rent (₹) <span class="required">*</span></label>
+          {{ form.rent }}
+          {% for error in form.rent.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.bedrooms.id_for_label }}">Bedrooms <span class="required">*</span></label>
+          {{ form.bedrooms }}
+          {% for error in form.bedrooms.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.bathrooms.id_for_label }}">Bathrooms <span class="required">*</span></label>
+          {{ form.bathrooms }}
+          {% for error in form.bathrooms.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <!-- Room availability -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-top:0.25rem;">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.total_rooms.id_for_label }}">Total Rooms / Units <span class="required">*</span></label>
+          {{ form.total_rooms }}
+          <p style="font-size:0.78rem; color:#94a3b8; margin-top:0.35rem;">Total rentable rooms in this property.</p>
+          {% for error in form.total_rooms.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.available_rooms.id_for_label }}">Available Rooms <span class="required">*</span></label>
+          {{ form.available_rooms }}
+          <p style="font-size:0.78rem; color:#94a3b8; margin-top:0.35rem;">Auto-updates on booking approve / tenant checkout.</p>
+          {% for error in form.available_rooms.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.amenities.id_for_label }}">Amenities</label>
+        {{ form.amenities }}
+        <p style="font-size:0.78rem; color:#94a3b8; margin-top:0.4rem;">Separate amenities with commas, e.g. Infinity Pool, Private Parking, Concierge, Gym</p>
+        {% for error in form.amenities.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <!-- Section: Photo & Status -->
+    <div class="form-card" style="margin-bottom:2rem;">
+      <h2 style="font-size:1.15rem; font-weight:700; color:#ffffff; margin-bottom:1.5rem; padding-bottom:0.85rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+        📸 Photography &amp; Status
+      </h2>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.image.id_for_label }}">Property Photo</label>
+        {% if property and property.image %}
+          <div style="margin-bottom:1rem;">
+            <img src="{{ property.image.url }}" alt="Current photo"
+                 style="width:140px;height:95px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.1);">
+            <p style="font-size:0.78rem;color:#94a3b8;margin-top:0.35rem;">Current active photo. Upload a replacement image below.</p>
+          </div>
+        {% endif %}
+        {{ form.image }}
+        <p style="font-size:0.78rem; color:#94a3b8; margin-top:0.4rem;">Supported formats: JPEG, PNG, WebP (Max 5 MB)</p>
+        {% for error in form.image.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="form-group" style="display:flex; align-items:center; gap:0.85rem; margin-top:1.25rem;">
+        {{ form.is_available }}
+        <label for="{{ form.is_available.id_for_label }}" style="cursor:pointer; font-weight:600; color:#ffffff;">
+          Mark as Available for Rent
+        </label>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div style="display:flex; gap:1rem; justify-content:flex-end;">
+      <a href="{% url 'owner_dashboard' %}" class="btn btn-ghost">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-lg">
+        {% if action == 'Add' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Publish Listing
+        {% else %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Changes
+        {% endif %}
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

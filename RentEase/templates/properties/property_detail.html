@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ property.title }} — RentEase Luxury Real Estate{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:2.5rem; padding-bottom:4rem; max-width:1140px;">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="{% url 'home' %}">Home</a>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    <a href="{% url 'property_list' %}">Properties</a>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    <span>{{ property.title|truncatechars:40 }}</span>
+  </div>
+
+  <!-- Property Image Banner -->
+  <div class="detail-hero">
+    {% if property.image %}
+      <img src="{{ property.image.url }}" alt="{{ property.title }}">
+    {% else %}
+      <div class="img-placeholder" style="height:100%;">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span style="font-size:1rem; color:#64748b;">No Photo Available</span>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Two-column layout -->
+  <div class="detail-grid">
+
+    <!-- LEFT: Property Details -->
+    <div>
+      <!-- Title & badges -->
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1.25rem; margin-bottom:1.25rem;">
+        <div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+            <span class="property-type-badge" style="position:static;">{{ property.get_property_type_display }}</span>
+            {% if property.is_available %}
+              <span class="status-badge badge-available">● Available</span>
+            {% else %}
+              <span class="status-badge badge-unavailable">● Not Available</span>
+            {% endif %}
+          </div>
+          <h1 style="font-size:2.2rem; font-weight:800; color:#ffffff; line-height:1.2; letter-spacing:-0.5px;">
+            {{ property.title }}
+          </h1>
+          {% if total_reviews > 0 %}
+            <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.4rem;">
+              <span style="color:#d4af37; font-weight:700; font-size:0.95rem;">
+                ★ {{ average_rating }}
+              </span>
+              <span style="color:#94a3b8; font-size:0.85rem;">
+                · <a href="#reviews" style="color:#94a3b8; text-decoration:underline;">{{ total_reviews }} review{{ total_reviews|pluralize }}</a>
+              </span>
+            </div>
+          {% endif %}
+        </div>
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="font-family:'Outfit', sans-serif; font-size:2.2rem; font-weight:800; color:var(--color-primary-light);">
+            ₹{{ property.rent|floatformat:0 }}
+          </div>
+          <div style="font-size:0.85rem; color:#94a3b8;">per month</div>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <p style="display:flex; align-items:center; gap:0.5rem; color:#94a3b8; font-size:1.05rem; margin-bottom:1.75rem;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--color-primary);">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+          <circle cx="12" cy="10" r="3"/>
+        </svg>
+        {{ property.location }}
+      </p>
+
+      <!-- Quick stats row -->
+      <div style="display:flex; gap:2rem; padding:1.5rem; background:var(--color-card); border:1px solid var(--color-card-border); border-radius:var(--radius-lg); margin-bottom:2rem; flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <div style="font-family:'Outfit',sans-serif; font-size:1.6rem; font-weight:800; color:#ffffff;">{{ property.bedrooms }}</div>
+          <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Bedroom{{ property.bedrooms|pluralize }}</div>
+        </div>
+        <div style="width:1px; background:rgba(255,255,255,0.08);"></div>
+        <div style="text-align:center;">
+          <div style="font-family:'Outfit',sans-serif; font-size:1.6rem; font-weight:800; color:#ffffff;">{{ property.bathrooms }}</div>
+          <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Bathroom{{ property.bathrooms|pluralize }}</div>
+        </div>
+        <div style="width:1px; background:rgba(255,255,255,0.08);"></div>
+        <div style="text-align:center;">
+          <div style="font-family:'Outfit',sans-serif; font-size:1.15rem; font-weight:700; color:#ffffff; padding-top:4px;">{{ property.created_at|date:"d M Y" }}</div>
+          <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Listed On</div>
+        </div>
+        <div style="width:1px; background:rgba(255,255,255,0.08);"></div>
+        <div style="text-align:center;">
+          <div style="font-family:'Outfit',sans-serif; font-size:1.15rem; font-weight:700; color:#ffffff; padding-top:4px;">{{ property.owner.get_full_name|default:property.owner.username }}</div>
+          <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Owner</div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div style="margin-bottom:2rem;">
+        <h2 style="font-size:1.25rem; font-weight:800; color:#ffffff; margin-bottom:0.85rem;">About this Property</h2>
+        <p style="color:#cbd5e1; line-height:1.8; white-space:pre-line;">{{ property.description }}</p>
+      </div>
+
+      <!-- Amenities -->
+      {% if amenities %}
+      <div>
+        <h2 style="font-size:1.25rem; font-weight:800; color:#ffffff; margin-bottom:0.85rem;">Key Amenities</h2>
+        <div style="display:flex; flex-wrap:wrap; gap:0.65rem;">
+          {% for amenity in amenities %}
+            <span class="amenity-pill">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              {{ amenity }}
+            </span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- ===== REVIEWS & RATINGS SECTION ===== -->
+      <div id="reviews" style="margin-top:2.75rem; padding-top:2rem; border-top:1px solid rgba(255,255,255,0.08);">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+          <div>
+            <h2 style="font-size:1.35rem; font-weight:700; color:#ffffff; display:flex; align-items:center; gap:0.65rem;">
+              Reviews
+              {% if average_rating %}
+                <span style="font-size:0.95rem; color:#d4af37; background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.22); padding:2px 10px; border-radius:9999px;">
+                  ★ {{ average_rating }}
+                </span>
+                <span style="font-size:0.85rem; color:#64748b; font-weight:500;">
+                  ({{ reviews|length }})
+                </span>
+              {% endif %}
+            </h2>
+          </div>
+          {% if can_review %}
+            <a href="#review-form" class="btn btn-outline btn-sm">
+              {% if user_review %}Edit Review{% else %}Write a Review{% endif %}
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- Rating Submission Form (Only for verified tenants who booked) -->
+        {% if can_review %}
+          <div id="review-form" class="form-card" style="margin-bottom:2rem; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08);">
+            <h3 style="font-size:1.05rem; font-weight:700; color:#ffffff; margin-bottom:1rem;">
+              {% if user_review %}Edit Your Review{% else %}Leave a Review{% endif %}
+            </h3>
+            <form method="post" action="{% url 'add_review' property.pk %}">
+              {% csrf_token %}
+              <div class="form-group">
+                <label class="form-label" for="{{ review_form.rating.id_for_label }}">Rating</label>
+                {{ review_form.rating }}
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="{{ review_form.comment.id_for_label }}">Review</label>
+                {{ review_form.comment }}
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">
+                {% if user_review %}Update Review{% else %}Submit Review{% endif %}
+              </button>
+            </form>
+          </div>
+        {% endif %}
+
+        <!-- Reviews List -->
+        {% if reviews %}
+          <div style="display:flex; flex-direction:column; gap:1.25rem;">
+            {% for rev in reviews %}
+              <div style="background:var(--color-card); border:1px solid var(--color-card-border); border-radius:var(--radius-lg); padding:1.4rem;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.65rem;">
+                  <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <div style="width:38px;height:38px;background:var(--gradient-bronze);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ffffff;font-weight:700;font-size:0.95rem;">
+                      {{ rev.tenant.first_name|first|upper|default:rev.tenant.username|first|upper }}
+                    </div>
+                    <div>
+                      <div style="font-weight:700; color:#ffffff; font-size:0.95rem;">
+                        {{ rev.tenant.get_full_name|default:rev.tenant.username }}
+                        <span style="font-size:0.75rem; color:#94a3b8; font-weight:500; margin-left:6px;">· Verified Stay</span>
+                      </div>
+                      <div style="font-size:0.78rem; color:#64748b;">{{ rev.created_at|date:"d M Y" }}</div>
+                    </div>
+                  </div>
+                  <div style="color:#d4af37; font-size:1rem; letter-spacing:2px;">
+                    {% if rev.rating == 5 %}★★★★★{% elif rev.rating == 4 %}★★★★☆{% elif rev.rating == 3 %}★★★☆☆{% elif rev.rating == 2 %}★★☆☆☆{% else %}★☆☆☆☆{% endif %}
+                  </div>
+                </div>
+                {% if rev.comment %}
+                  <p style="color:#cbd5e1; font-size:0.92rem; line-height:1.7; margin-top:0.5rem;">
+                    "{{ rev.comment }}"
+                  </p>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div style="padding:1rem 0; color:#64748b; font-size:0.9rem;">
+            No reviews yet.
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Booking Sidebar -->
+    <div>
+      <div style="background:var(--color-card); border:1px solid var(--color-card-border); border-radius:var(--radius-lg); padding:2rem; position:sticky; top:95px; box-shadow:0 15px 35px rgba(0,0,0,0.6);">
+
+        <!-- Price Summary -->
+        <div style="text-align:center; padding-bottom:1.5rem; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:1.5rem;">
+          <div style="font-family:'Outfit',sans-serif; font-size:2.5rem; font-weight:800; color:#ffffff;">
+            ₹{{ property.rent|floatformat:0 }}
+          </div>
+          <div style="color:#94a3b8; font-size:0.9rem;">per month</div>
+
+          <!-- Available rooms pill -->
+          <div style="margin-top:0.85rem; display:inline-flex; align-items:center; gap:0.5rem;
+               background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+               border-radius:9999px; padding:0.3rem 0.9rem;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 style="color:{% if property.available_rooms > 2 %}#4ade80{% elif property.available_rooms == 1 %}#f97316{% else %}#ef4444{% endif %};">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            </svg>
+            <span style="font-size:0.8rem; color:#cbd5e1;">
+              <strong style="color:{% if property.available_rooms > 2 %}#4ade80{% elif property.available_rooms == 1 %}#f97316{% else %}#ef4444{% endif %};">
+                {{ property.available_rooms }}
+              </strong>
+              of {{ property.total_rooms }} room{{ property.total_rooms|pluralize }} available
+            </span>
+          </div>
+        </div>
+
+        {% if request.user.is_authenticated %}
+          {% if request.user == property.owner %}
+            <!-- Owner view -->
+            <div style="text-align:center; color:#94a3b8; font-size:0.9rem; margin-bottom:1.25rem;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin:0 auto 0.5rem;display:block;color:var(--color-primary);"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+              You are the verified owner of this listing.
+            </div>
+            <a href="{% url 'edit_property' property.pk %}" class="btn btn-outline" style="width:100%; justify-content:center; margin-bottom:0.75rem;">
+              Edit Property
+            </a>
+            <a href="{% url 'owner_dashboard' %}" class="btn btn-ghost" style="width:100%; justify-content:center;">
+              Dashboard
+            </a>
+
+          {% elif existing_booking %}
+            <!-- Already booked -->
+            <div style="text-align:center; padding:1.25rem; background:rgba(197,139,84,0.12); border:1px solid rgba(197,139,84,0.3); border-radius:var(--radius-md); margin-bottom:1.25rem;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" style="margin:0 auto 0.5rem;display:block;"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+              <div style="font-weight:700; color:#ffffff;">Request Already Sent</div>
+              <div style="font-size:0.82rem; color:#94a3b8; margin-top:0.35rem;">
+                Status: <span class="status-badge status-{{ existing_booking.status }}">{{ existing_booking.get_status_display }}</span>
+              </div>
+            </div>
+            <a href="{% url 'my_bookings' %}" class="btn btn-outline" style="width:100%; justify-content:center;">
+              View My Bookings
+            </a>
+
+          {% elif property.is_available %}
+            <!-- Booking form -->
+            <h3 style="font-size:1.1rem; font-weight:700; color:#ffffff; margin-bottom:0.5rem;">Request to Book</h3>
+            <p style="font-size:0.8rem; color:#64748b; margin-bottom:1.1rem;">Your contact is shared only with the owner.</p>
+            <form method="post" action="{% url 'book_property' property.pk %}">
+              {% csrf_token %}
+              <div class="form-group">
+                <label class="form-label" for="{{ form.tenant_full_name.id_for_label }}">Full Name <span class="required">*</span></label>
+                {{ form.tenant_full_name }}
+                {% if form.tenant_full_name.errors %}{% for e in form.tenant_full_name.errors %}<p class="field-error">{{ e }}</p>{% endfor %}{% endif %}
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="{{ form.tenant_contact.id_for_label }}">Contact Number <span class="required">*</span></label>
+                {{ form.tenant_contact }}
+                {% if form.tenant_contact.errors %}{% for e in form.tenant_contact.errors %}<p class="field-error">{{ e }}</p>{% endfor %}{% endif %}
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="{{ form.start_date.id_for_label }}">Move-in Date</label>
+                {{ form.start_date }}
+                {% if form.start_date.errors %}{% for error in form.start_date.errors %}<p class="field-error">{{ error }}</p>{% endfor %}{% endif %}
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="{{ form.duration_months.id_for_label }}">Duration (months)</label>
+                {{ form.duration_months }}
+                {% if form.duration_months.errors %}{% for error in form.duration_months.errors %}<p class="field-error">{{ error }}</p>{% endfor %}{% endif %}
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="{{ form.message.id_for_label }}">Message (optional)</label>
+                {{ form.message }}
+              </div>
+              <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:0.85rem; margin-top:0.5rem;">
+                Send Booking Request
+              </button>
+            </form>
+
+          {% else %}
+            <div style="text-align:center; color:#94a3b8; padding:1.25rem;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin:0 auto 0.5rem;display:block;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              This property is currently not available for rent.
+            </div>
+          {% endif %}
+
+        {% else %}
+          <!-- Not logged in -->
+          <div style="text-align:center; padding:1.5rem 0;">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-light)" stroke-width="1.5" style="margin:0 auto 0.85rem;display:block;">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <p style="font-size:0.92rem; color:#94a3b8; margin-bottom:1.5rem; line-height:1.6;">
+              Sign in to your account to request a booking or communicate with the owner.
+            </p>
+            <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary" style="width:100%; justify-content:center; margin-bottom:0.75rem;">
+              Sign In to Book
+            </a>
+            <a href="{% url 'register' %}" class="btn btn-ghost" style="width:100%; justify-content:center;">
+              Create Account
+            </a>
+          </div>
+        {% endif %}
+
+        <!-- Owner contact info -->
+        <div style="margin-top:1.75rem; padding-top:1.5rem; border-top:1px solid rgba(255,255,255,0.08);">
+          <div style="display:flex; align-items:center; gap:0.85rem;">
+            <div style="width:42px;height:42px;background:var(--gradient-bronze);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ffffff;font-weight:700;font-size:1.05rem;border:1px solid rgba(255,255,255,0.15);">
+              {{ property.owner.first_name|first|upper|default:property.owner.username|first|upper }}
+            </div>
+            <div>
+              <div style="font-weight:700; font-size:0.95rem; color:#ffffff;">
+                {{ property.owner.get_full_name|default:property.owner.username }}
+              </div>
+              <div style="font-size:0.78rem; color:var(--color-primary-light);">Verified Property Owner</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div><!-- /detail-grid -->
+</div>
+{% endblock %}

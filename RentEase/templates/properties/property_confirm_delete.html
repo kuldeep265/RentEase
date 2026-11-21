@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Property — RentEase Luxury Real Estate{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card" style="max-width:520px; text-align:center;">
+
+    <!-- Warning Icon -->
+    <div style="width:72px;height:72px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+
+    <h1 style="font-size:1.75rem; color:#ffffff; margin-bottom:0.5rem;">Delete Listing</h1>
+    <p style="color:#94a3b8; margin-bottom:0.35rem; font-size:0.95rem;">
+      You are about to permanently remove this property:
+    </p>
+    <p style="font-weight:700; color:var(--color-primary-light); font-size:1.15rem; margin-bottom:1.5rem;">
+      "{{ property.title }}"
+    </p>
+
+    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); border-radius:12px; padding:1.15rem; margin-bottom:1.75rem; text-align:left;">
+      <p style="font-size:0.88rem; color:#fca5a5; line-height:1.6;">
+        <strong>⚠ This action is permanent.</strong><br>
+        All booking requests and history associated with this listing will also be removed.
+      </p>
+    </div>
+
+    <!-- Property summary -->
+    <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:1.15rem; text-align:left; margin-bottom:2rem;">
+      <div style="font-size:0.88rem; color:#cbd5e1; line-height:1.8;">
+        📍 {{ property.location }}<br>
+        💰 ₹{{ property.rent|floatformat:0 }} / month<br>
+        🏠 {{ property.get_property_type_display }} · {{ property.bedrooms }} BHK
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div style="display:flex; gap:1rem; justify-content:center;">
+      <a href="{% url 'owner_dashboard' %}" class="btn btn-ghost btn-lg">
+        Cancel
+      </a>
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger btn-lg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          Delete Property
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
