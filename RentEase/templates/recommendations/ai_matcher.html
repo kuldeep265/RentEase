@@ -91,8 +91,8 @@
         </label>
         <div style="display:flex; flex-wrap:wrap; gap:0.6rem;">
           {% for am in available_amenities %}
-            <label class="amenity-chip {% if am in selected_amenities %}active{% endif %}" style="cursor:pointer; user-select:none;">
-              <input type="checkbox" name="amenities" value="{{ am }}" {% if am in selected_amenities %}checked{% endif %} style="display:none;">
+            <label class="amenity-chip {% if am in selected_amenities %}active{% endif %}">
+              <input type="checkbox" name="amenities" value="{{ am }}" class="amenity-checkbox" {% if am in selected_amenities %}checked{% endif %}>
               <span class="chip-text">
                 {% if am == 'WiFi' %}📶 Wi-Fi
                 {% elif am == 'AC' %}❄️ Air Conditioning
@@ -321,24 +321,36 @@
   .amenity-chip {
     display: inline-flex;
     align-items: center;
+    gap: 0.5rem;
     background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.12);
     border-radius: 9999px;
-    padding: 0.35rem 0.85rem;
-    font-size: 0.82rem;
-    color: #94a3b8;
+    padding: 0.45rem 0.95rem;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    cursor: pointer;
+    user-select: none;
     transition: all 0.2s ease;
   }
   .amenity-chip:hover {
     background: rgba(255,255,255,0.08);
-    border-color: rgba(255,255,255,0.2);
+    border-color: rgba(197,139,84,0.4);
     color: #ffffff;
   }
-  .amenity-chip.active {
-    background: rgba(197,139,84,0.18);
-    border-color: var(--color-primary);
-    color: var(--color-primary-light);
-    font-weight: 600;
+  .amenity-chip.active,
+  .amenity-chip:has(input:checked) {
+    background: rgba(197,139,84,0.22) !important;
+    border-color: var(--color-primary) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 0 12px rgba(197,139,84,0.35);
+  }
+  .amenity-checkbox {
+    accent-color: #c58b54;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0;
   }
   .btn-save-toggle:hover {
     transform: scale(1.1);
@@ -367,14 +379,11 @@
       });
     });
 
-    // 2. Interactive amenity chips toggle
-    document.querySelectorAll('.amenity-chip').forEach(function(chip) {
-      const checkbox = chip.querySelector('input[type="checkbox"]');
-      chip.addEventListener('click', function(e) {
-        if (e.target !== checkbox) {
-          checkbox.checked = !checkbox.checked;
-        }
-        if (checkbox.checked) {
+    // 2. Interactive amenity chips toggle using native change events
+    document.querySelectorAll('.amenity-chip input[type="checkbox"]').forEach(function(checkbox) {
+      checkbox.addEventListener('change', function() {
+        const chip = this.closest('.amenity-chip');
+        if (this.checked) {
           chip.classList.add('active');
         } else {
           chip.classList.remove('active');
