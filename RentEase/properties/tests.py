@@ -688,3 +688,168 @@ class ReviewTest(TestCase):
         review = Review.objects.get(property=self.prop, tenant=self.tenant)
         self.assertEqual(review.rating, 5)
         self.assertEqual(review.comment, 'Updated: Actually it was excellent!')
+
+
+# =========================================================================== #
+#  AI Recommendation System Tests
+# =========================================================================== #
+
+from properties.models import PropertyInteraction, UserSearchPreference
+
+class AIRecommendationTest(TestCase):
+    def setUp(self):
+        self.owner = make_owner()
+        self.tenant = make_tenant()
+        # Create diverse properties for recommendation testing
+        self.prop_mumbai_flat = Property.objects.create(
+            title='Luxury Sea View Flat',
+            description='Modern luxury flat with sea view.',
+            location='Bandra, Mumbai',
+            rent=Decimal('2000.00'),
+            property_type='apartment',
+            bedrooms=2,
+            bathrooms=2,
+            amenities='WiFi, AC, Parking, Furnished, Balcony',
+            owner=self.owner,
+            is_available=True,
+        )
+        self.prop_delhi_pg = Property.objects.create(
+            title='Comfortable Student PG',
+            description='Affordable PG near university.',
+            location='North Campus, Delhi',
+            rent=Decimal('800.00'),
+            property_type='pg',
+            bedrooms=1,
+            bathrooms=1,
+            amenities='WiFi, Power Backup',
+            owner=self.owner,
+            is_available=True,
+        )
+        self.prop_bengaluru_room = Property.objects.create(
+            title='Tech Park Studio Room',
+            description='Studio room close to tech park.',
+            location='Whitefield, Bengaluru',
+            rent=Decimal('1500.00'),
+            property_type='studio',
+            bedrooms=1,
+            bathrooms=1,
+            amenities='WiFi, AC, Parking, Kitchen',
+            owner=self.owner,
+            is_available=True,
+        )
+
+    def test_ai_matcher_page_loads(self):
+        """AI Matcher page renders with 200 OK and shows candidate recommendations."""
+        response = self.client.get(reverse('ai_recommendations'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'AI Matcher')
+        self.assertContains(response, 'Target Daily Budget')
+        self.assertContains(response, 'Luxury Sea View Flat')
+
+    def test_ai_scoring_prefers_matching_budget_and_location(self):
+        """Properties matching user budget, location, and type rank higher."""
+        response = self.client.get(
+            reverse('ai_recommendations'),
+            {
+                'budget': '1500',
+                'location': 'Bengaluru',
+                'property_type': 'studio',
+                'amenities': ['WiFi', 'AC']
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        recommendations = response.context['recommendations']
+        self.assertTrue(len(recommendations) > 0)
+        top_rec = recommendations[0]
+        # Bengaluru studio room should be #1 recommendation
+        self.assertEqual(top_rec['property'], self.prop_bengaluru_room)
+        self.assertGreaterEqual(top_rec['score'], 80)
+        self.assertTrue(any('Bengaluru' in r or 'budget' in r.lower() for r in top_rec['reasons']))
+
+    def test_behavioral_learning_save_boosts_similar_properties(self):
+        """Saving a property boosts similar properties in subsequent recommendations."""
+        # Tenant saves Delhi PG
+        self.client.login(username='testtenant', password='TestPass@123')
+        save_response = self.client.post(reverse('toggle_save_property', args=[self.prop_delhi_pg.pk]))
+        self.assertEqual(save_response.status_code, 302)
+        self.assertTrue(
+            PropertyInteraction.objects.filter(
+                user=self.tenant,
+                property=self.prop_delhi_pg,
+                interaction_type='saved'
+            ).exists()
+        )
+
+        # Create another similar PG in Delhi
+        prop_delhi_pg2 = Property.objects.create(
+            title='Green Park PG Hostel',
+            description='Second PG in Delhi.',
+            location='South Campus, Delhi',
+            rent=Decimal('850.00'),
+            property_type='pg',
+            bedrooms=1,
+            bathrooms=1,
+            amenities='WiFi',
+            owner=self.owner,
+            is_available=True,
+        )
+
+        # AI recommendations without explicit search parameters should boost Delhi PG properties
+        response = self.client.get(reverse('ai_recommendations'))
+        recommendations = response.context['recommendations']
+        top_properties = [r['property'] for r in recommendations]
+        # Both Delhi PGs should be ranked prominently due to saved preference learning
+        self.assertIn(prop_delhi_pg2, top_properties)
+
+    def test_behavioral_learning_dismiss_excludes_property(self):
+        """Dismissed / rejected properties are excluded from AI recommendations."""
+        self.client.login(username='testtenant', password='TestPass@123')
+        # Dismiss Mumbai flat
+        dismiss_response = self.client.post(
+            reverse('dismiss_property', args=[self.prop_mumbai_flat.pk]),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        self.assertEqual(dismiss_response.status_code, 200)
+        self.assertTrue(
+            PropertyInteraction.objects.filter(
+                user=self.tenant,
+                property=self.prop_mumbai_flat,
+                interaction_type='dismissed'
+            ).exists()
+        )
+
+        # AI recommendations must NOT include the dismissed Mumbai flat
+        response = self.client.get(reverse('ai_recommendations'))
+        recommended_ids = [r['property'].id for r in response.context['recommendations']]
+        self.assertNotIn(self.prop_mumbai_flat.id, recommended_ids)
+
+    def test_reset_recommendations_clears_dismissed(self):
+        """Reset dismissals clears rejected list so user can see them again."""
+        self.client.login(username='testtenant', password='TestPass@123')
+        PropertyInteraction.objects.create(
+            user=self.tenant,
+            property=self.prop_mumbai_flat,
+            interaction_type='dismissed'
+        )
+        reset_response = self.client.post(reverse('reset_recommendations'))
+        self.assertRedirects(reset_response, reverse('ai_recommendations'))
+        self.assertFalse(
+            PropertyInteraction.objects.filter(
+                user=self.tenant,
+                property=self.prop_mumbai_flat,
+                interaction_type='dismissed'
+            ).exists()
+        )
+
+    def test_saved_properties_page(self):
+        """Saved properties view displays user's bookmarked properties."""
+        self.client.login(username='testtenant', password='TestPass@123')
+        PropertyInteraction.objects.create(
+            user=self.tenant,
+            property=self.prop_bengaluru_room,
+            interaction_type='saved'
+        )
+        response = self.client.get(reverse('saved_properties'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Tech Park Studio Room')
+        self.assertContains(response, 'My Saved Residences')

@@ -12,6 +12,7 @@ Demonstrates:
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -23,7 +24,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 import time
 
-from .models import Property, Booking, Review
+from .models import Property, Booking, Review, PropertyInteraction, UserSearchPreference
 from .forms import (
     RegisterForm, LoginForm,
     PropertyForm, BookingForm, ContactForm, ReviewForm
@@ -35,6 +36,7 @@ from .cashfree_service import (
     get_cashfree_checkout_url,
     is_cashfree_configured,
 )
+from .recommendation_service import get_ai_recommendations, get_user_interactions
 
 
 # =========================================================================== #
@@ -834,3 +836,241 @@ def checkout_booking(request, pk):
             messages.error(request, "Only active approved bookings can be checked out.")
 
     return redirect('owner_dashboard')
+
+
+# =========================================================================== #
+#  AI RECOMMENDATION & BEHAVIORAL LEARNING
+# =========================================================================== #
+
+def ensure_session(request):
+    """Ensure session key exists for guest tracking."""
+    if not request.session.session_key:
+        request.session.create()
+    return request.session.session_key
+
+
+def ai_recommendations(request):
+    """
+    AI Property Matcher & Recommendation Hub.
+    Accepts user preferences (budget, location, property type, amenities)
+    and combines them with learned user behavior (saved properties, dismissals, search history).
+    """
+    session_key = ensure_session(request)
+    user = request.user if request.user.is_authenticated else None
+
+    # Retrieve inputs (GET parameters)
+    budget = request.GET.get('budget', '').strip()
+    location = request.GET.get('location', '').strip()
+    property_type = request.GET.get('property_type', '').strip()
+    amenities_list = request.GET.getlist('amenities')
+    if not amenities_list and request.GET.get('amenities'):
+        amenities_list = [a.strip() for a in request.GET.get('amenities').split(',') if a.strip()]
+
+    # Save search preference if search parameters provided
+    if any([budget, location, property_type and property_type != 'all', amenities_list]):
+        target_b = None
+        if budget:
+            try:
+                target_b = Decimal(str(float(budget)))
+            except (ValueError, TypeError):
+                pass
+
+        UserSearchPreference.objects.create(
+            user=user,
+            session_key=session_key if not user else None,
+            target_budget=target_b,
+            location=location,
+            property_type=property_type,
+            amenities=", ".join(amenities_list),
+        )
+
+    # Run AI recommendation engine
+    result = get_ai_recommendations(
+        user=user,
+        session_key=session_key,
+        target_budget=budget,
+        preferred_location=location,
+        preferred_type=property_type,
+        requested_amenities=amenities_list,
+        limit=12
+    )
+
+    # Popular amenity options for easy interactive pill selection
+    available_amenity_options = [
+        'WiFi', 'AC', 'Parking', 'Furnished', 'Balcony', 'Kitchen',
+        'Gym', 'Swimming Pool', 'Security', 'Power Backup'
+    ]
+
+    property_type_choices = [
+        ('all', 'All Categories'),
+        ('apartment', 'Flat / Apartment'),
+        ('pg', 'PG / Hostel'),
+        ('studio', 'Room / Studio'),
+        ('house', 'House / Villa'),
+        ('farmhouse', 'Farmhouse'),
+    ]
+
+    context = {
+        'recommendations': result['recommendations'],
+        'total_evaluated': result['total_evaluated'],
+        'saved_count': result['saved_count'],
+        'dismissed_count': result['dismissed_count'],
+        'behavioral_profile': result['behavioral_profile'],
+        'budget': budget,
+        'location': location,
+        'property_type': property_type or 'all',
+        'selected_amenities': amenities_list,
+        'available_amenities': available_amenity_options,
+        'property_type_choices': property_type_choices,
+        'has_filters': any([budget, location, property_type and property_type != 'all', amenities_list]),
+        'page_title': '✨ AI Property Matcher — RentEase',
+    }
+    return render(request, 'recommendations/ai_matcher.html', context)
+
+
+def toggle_save_property(request, pk):
+    """
+    Toggle saving/bookmarking a property.
+    Positive behavioral signal for the AI recommendation system.
+    """
+    if request.method != 'POST':
+        return redirect('property_detail', pk=pk)
+
+    property_obj = get_object_or_404(Property, pk=pk)
+    session_key = ensure_session(request)
+    user = request.user if request.user.is_authenticated else None
+
+    q = Q(property=property_obj, interaction_type='saved')
+    if user:
+        q &= Q(user=user)
+    else:
+        q &= Q(session_key=session_key)
+
+    existing = PropertyInteraction.objects.filter(q).first()
+    if existing:
+        existing.delete()
+        is_saved = False
+        msg = f"Removed '{property_obj.title}' from saved properties."
+    else:
+        PropertyInteraction.objects.create(
+            user=user,
+            session_key=session_key if not user else None,
+            property=property_obj,
+            interaction_type='saved'
+        )
+        is_saved = True
+        msg = f"Saved '{property_obj.title}'! AI will use this to refine your matches."
+
+    count_q = Q(interaction_type='saved')
+    if user:
+        count_q &= Q(user=user)
+    else:
+        count_q &= Q(session_key=session_key)
+    saved_count = PropertyInteraction.objects.filter(count_q).count()
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':
+        return JsonResponse({
+            'success': True,
+            'is_saved': is_saved,
+            'saved_count': saved_count,
+            'message': msg,
+            'property_id': pk
+        })
+
+    messages.success(request, msg)
+    referer = request.META.get('HTTP_REFERER')
+    return redirect(referer if referer else 'ai_recommendations')
+
+
+def dismiss_property(request, pk):
+    """
+    Dismiss a property ('Not Interested' / Rejected).
+    Negative behavioral signal: hides property and suppresses similar traits.
+    """
+    if request.method != 'POST':
+        return redirect('property_detail', pk=pk)
+
+    property_obj = get_object_or_404(Property, pk=pk)
+    session_key = ensure_session(request)
+    user = request.user if request.user.is_authenticated else None
+
+    # Remove from saved if currently saved
+    save_q = Q(property=property_obj, interaction_type='saved')
+    if user:
+        save_q &= Q(user=user)
+    else:
+        save_q &= Q(session_key=session_key)
+    PropertyInteraction.objects.filter(save_q).delete()
+
+    # Record dismissal
+    PropertyInteraction.objects.get_or_create(
+        user=user,
+        session_key=session_key if not user else None,
+        property=property_obj,
+        interaction_type='dismissed'
+    )
+
+    dismiss_q = Q(interaction_type='dismissed')
+    if user:
+        dismiss_q &= Q(user=user)
+    else:
+        dismiss_q &= Q(session_key=session_key)
+    dismissed_count = PropertyInteraction.objects.filter(dismiss_q).count()
+
+    msg = f"Removed '{property_obj.title}'. AI learned your feedback and refined recommendations."
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.GET.get('format') == 'json':
+        return JsonResponse({
+            'success': True,
+            'dismissed_count': dismissed_count,
+            'message': msg,
+            'property_id': pk
+        })
+
+    messages.info(request, msg)
+    referer = request.META.get('HTTP_REFERER')
+    return redirect(referer if referer else 'ai_recommendations')
+
+
+def reset_recommendations(request):
+    """
+    Clears all dismissed/rejected properties for the user so they can start fresh.
+    """
+    if request.method == 'POST':
+        session_key = ensure_session(request)
+        user = request.user if request.user.is_authenticated else None
+
+        q = Q(interaction_type='dismissed')
+        if user:
+            q &= Q(user=user)
+        else:
+            q &= Q(session_key=session_key)
+
+        deleted_count = PropertyInteraction.objects.filter(q).delete()[0]
+        messages.success(request, f"Reset {deleted_count} dismissed properties. AI recommendations refreshed!")
+
+    return redirect('ai_recommendations')
+
+
+def saved_properties(request):
+    """
+    Displays the user's bookmarked / saved properties.
+    """
+    session_key = ensure_session(request)
+    user = request.user if request.user.is_authenticated else None
+
+    q = Q(interaction_type='saved')
+    if user:
+        q &= Q(user=user)
+    else:
+        q &= Q(session_key=session_key)
+
+    saved_interactions = PropertyInteraction.objects.filter(q).select_related('property').order_by('-created_at')
+    properties = [item.property for item in saved_interactions if item.property.is_available]
+
+    context = {
+        'properties': properties,
+        'saved_count': len(properties),
+        'page_title': 'My Saved Properties — RentEase',
+    }
+    return render(request, 'recommendations/saved_properties.html', context)

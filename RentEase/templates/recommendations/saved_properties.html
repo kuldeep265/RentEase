@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Saved Properties — RentEase{% endblock %}
+
+{% block content %}
+<div class="page-header" style="padding:3rem 0 2rem;">
+  <div class="container" style="max-width:1140px;">
+    <div class="breadcrumb" style="margin-bottom:0.75rem;">
+      <a href="{% url 'home' %}">Home</a>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <a href="{% url 'ai_recommendations' %}">AI Matcher</a>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <span>Saved Properties</span>
+    </div>
+    <h1 style="font-size:2.4rem; font-weight:800; color:#ffffff; margin-bottom:0.5rem;">
+      My Saved Residences <span style="color:var(--color-primary-light); font-size:1.5rem;">({{ saved_count }})</span>
+    </h1>
+    <p style="color:#94a3b8; font-size:0.95rem; margin:0;">
+      Residences you have bookmarked. The AI uses these preferences to suggest similar high-compatibility spaces.
+    </p>
+  </div>
+</div>
+
+<div class="container" style="max-width:1140px; padding-bottom:5rem;">
+
+  {% if properties %}
+    <div class="property-grid">
+      {% for property in properties %}
+        <article class="property-card" id="saved-card-{{ property.id }}">
+          <div class="property-card-img-wrap">
+            {% if property.image %}
+              <img src="{{ property.image.url }}" alt="{{ property.title }}" loading="lazy">
+            {% else %}
+              <div class="img-placeholder">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span>No Photo</span>
+              </div>
+            {% endif %}
+            <span class="property-type-badge">{{ property.get_property_type_display }}</span>
+            {% if property.is_currently_available %}
+              <span class="availability-badge badge-available">Available</span>
+            {% else %}
+              <span class="availability-badge badge-unavailable">Not Available</span>
+            {% endif %}
+          </div>
+
+          <div class="property-card-body">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+              <h2 class="property-card-title" style="margin-bottom:0; flex:1;">
+                <a href="{% url 'property_detail' property.pk %}" style="color:inherit; text-decoration:none;">
+                  {{ property.title }}
+                </a>
+              </h2>
+              
+              <!-- Unsave button -->
+              <form method="post" action="{% url 'toggle_save_property' property.pk %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" title="Remove from Saved"
+                        style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3);
+                               width:32px; height:32px; border-radius:50%; display:inline-flex; align-items:center;
+                               justify-content:center; cursor:pointer; color:#f43f5e;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                  </svg>
+                </button>
+              </form>
+            </div>
+
+            <p class="property-card-location">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              {{ property.location }}
+            </p>
+
+            <div class="property-card-meta">
+              <span>{{ property.bedrooms }} Bed{{ property.bedrooms|pluralize }}</span>
+              <span>{{ property.bathrooms }} Bath{{ property.bathrooms|pluralize }}</span>
+              {% if property.average_rating %}
+                <span style="color:#d4af37; font-weight:700;">★ {{ property.average_rating }}</span>
+              {% endif %}
+            </div>
+
+            <div class="property-card-footer">
+              <div class="property-price">₹{{ property.rent|floatformat:0 }}<small>/day</small></div>
+              <a href="{% url 'property_detail' property.pk %}" class="btn btn-outline btn-sm">View Details</a>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="background:var(--color-card); border:1px solid var(--color-card-border); border-radius:var(--radius-lg); padding:4rem 2rem; text-align:center;">
+      <div style="width:64px; height:64px; border-radius:50%; background:rgba(244,63,94,0.1); display:inline-flex; align-items:center; justify-content:center; color:#f43f5e; margin-bottom:1.25rem;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+        </svg>
+      </div>
+      <h3 style="font-size:1.35rem; font-weight:700; color:#ffffff; margin-bottom:0.5rem;">No Saved Properties Yet</h3>
+      <p style="font-size:0.92rem; color:#94a3b8; max-width:440px; margin:0 auto 1.5rem; line-height:1.6;">
+        Explore recommendations and click the heart icon on properties you like. Your saves help the AI learn your style!
+      </p>
+      <a href="{% url 'ai_recommendations' %}" class="btn btn-primary">
+        <span>✨</span> Open AI Property Matcher
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

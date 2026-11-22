@@ -481,3 +481,115 @@ class Review(models.Model):
     def __str__(self):
         return f"{self.rating}★ review by {self.tenant.username} for '{self.property.title}'"
 
+
+# =========================================================================== #
+#  AI Recommendation & Behavioral Learning Models
+# =========================================================================== #
+
+class PropertyInteraction(models.Model):
+    """
+    Tracks tenant actions on properties for behavioral AI learning:
+    - 'saved': User favorited/bookmarked a property (positive signal: +weight on traits).
+    - 'dismissed': User rejected/'Not Interested' (negative signal: penalty / auto-exclude).
+    - 'viewed': User inspected the property details.
+    Supports both logged-in users and anonymous sessions via session_key.
+    """
+    INTERACTION_CHOICES = [
+        ('saved', 'Saved / Favorited'),
+        ('dismissed', 'Dismissed / Rejected'),
+        ('viewed', 'Viewed Details'),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='property_interactions',
+        help_text="Authenticated user (optional if guest)."
+    )
+    session_key = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Session identifier for anonymous guest learning."
+    )
+    property = models.ForeignKey(
+        Property,
+        on_delete=models.CASCADE,
+        related_name='interactions',
+        help_text="Target property."
+    )
+    interaction_type = models.CharField(
+        max_length=20,
+        choices=INTERACTION_CHOICES,
+        help_text="Action performed by the tenant."
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'interaction_type']),
+            models.Index(fields=['session_key', 'interaction_type']),
+        ]
+        verbose_name = 'Property Interaction'
+        verbose_name_plural = 'Property Interactions'
+
+    def __str__(self):
+        actor = self.user.username if self.user else f"Guest ({self.session_key[:8]}...)"
+        return f"{actor} -> {self.interaction_type} '{self.property.title}'"
+
+
+class UserSearchPreference(models.Model):
+    """
+    Records search queries to establish user taste profiles over time.
+    AI engine learns recurring budgets, locations, and desired amenities.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='search_preferences'
+    )
+    session_key = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        db_index=True
+    )
+    target_budget = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="User's preferred daily budget in INR."
+    )
+    location = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Preferred city, area, or landmark."
+    )
+    property_type = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Desired property category (apartment, house, pg, studio)."
+    )
+    amenities = models.CharField(
+        max_length=300,
+        blank=True,
+        help_text="Comma-separated requested amenities (e.g. WiFi, AC, Parking)."
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'User Search Preference'
+        verbose_name_plural = 'User Search Preferences'
+
+    def __str__(self):
+        actor = self.user.username if self.user else f"Guest ({self.session_key[:8]}...)"
+        return f"Search by {actor} — {self.location or 'Any location'} (₹{self.target_budget or 'Any'})"
+

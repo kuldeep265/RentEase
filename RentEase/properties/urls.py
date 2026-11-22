@@ -14,6 +14,13 @@ urlpatterns = [
     path('about/', views.about, name='about'),
     path('contact/', views.contact, name='contact'),
 
+    # ---- AI Recommendation System ----
+    path('recommendations/', views.ai_recommendations, name='ai_recommendations'),
+    path('recommendations/saved/', views.saved_properties, name='saved_properties'),
+    path('recommendations/toggle-save/<int:pk>/', views.toggle_save_property, name='toggle_save_property'),
+    path('recommendations/dismiss/<int:pk>/', views.dismiss_property, name='dismiss_property'),
+    path('recommendations/reset/', views.reset_recommendations, name='reset_recommendations'),
+
     # ---- Property Listing & Detail ----
     path('properties/', views.property_list, name='property_list'),
     path('properties/<int:pk>/', views.property_detail, name='property_detail'),

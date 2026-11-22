@@ -74,6 +74,12 @@
         <ul class="navbar-nav">
           <li><a href="{% url 'home' %}" {% if request.resolver_match.url_name == 'home' %}class="active"{% endif %}>Home</a></li>
           <li><a href="{% url 'property_list' %}" {% if request.resolver_match.url_name == 'property_list' %}class="active"{% endif %}>Properties</a></li>
+          <li>
+            <a href="{% url 'ai_recommendations' %}" {% if request.resolver_match.url_name == 'ai_recommendations' %}class="active"{% endif %} style="display:inline-flex; align-items:center; gap:5px; color:var(--color-primary-light); font-weight:700;">
+              <span>✨</span> AI Matcher
+            </a>
+          </li>
+          <li><a href="{% url 'saved_properties' %}" {% if request.resolver_match.url_name == 'saved_properties' %}class="active"{% endif %}>Saved</a></li>
           <li><a href="{% url 'about' %}" {% if request.resolver_match.url_name == 'about' %}class="active"{% endif %}>About</a></li>
           <li><a href="{% url 'contact' %}" {% if request.resolver_match.url_name == 'contact' %}class="active"{% endif %}>Contact</a></li>
           {% if request.user.is_authenticated %}
@@ -158,6 +164,8 @@
           <ul>
             <li><a href="{% url 'home' %}">Home</a></li>
             <li><a href="{% url 'property_list' %}">Explore Properties</a></li>
+            <li><a href="{% url 'ai_recommendations' %}">✨ AI Property Matcher</a></li>
+            <li><a href="{% url 'saved_properties' %}">Saved Properties</a></li>
             <li><a href="{% url 'about' %}">About Us</a></li>
             <li><a href="{% url 'contact' %}">Contact</a></li>
           </ul>

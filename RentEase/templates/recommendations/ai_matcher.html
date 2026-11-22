@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AI Property Matcher — RentEase{% endblock %}
+
+{% block content %}
+<div class="page-header" style="background:linear-gradient(180deg, rgba(197,139,84,0.12) 0%, rgba(7,7,10,0) 100%); padding:3.5rem 0 2rem;">
+  <div class="container" style="max-width:1140px;">
+    <div style="display:inline-flex; align-items:center; gap:0.5rem; background:rgba(197,139,84,0.15); border:1px solid rgba(197,139,84,0.35); padding:0.35rem 0.9rem; border-radius:9999px; margin-bottom:1rem;">
+      <span style="font-size:0.95rem;">✨</span>
+      <span style="font-size:0.8rem; font-weight:700; color:var(--color-primary-light); text-transform:uppercase; letter-spacing:1px;">
+        Self-Learning Recommendation System
+      </span>
+    </div>
+    <h1 style="font-size:2.6rem; font-weight:800; color:#ffffff; line-height:1.2; margin-bottom:0.75rem; letter-spacing:-0.5px;">
+      Find Your Ideal Stay with <span style="background:var(--gradient-bronze); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">AI Matcher</span>
+    </h1>
+    <p style="font-size:1.05rem; color:#94a3b8; max-width:680px; line-height:1.6; margin:0;">
+      No more scrolling through hundreds of listings. Tell our AI your budget, location, and lifestyle preferences. The system continuously learns from your saves and dismissals to refine your matches in real time.
+    </p>
+  </div>
+</div>
+
+<div class="container" style="max-width:1140px; padding-bottom:5rem;">
+
+  <!-- ==========================================
+       AI PREFERENCE CONFIGURATOR
+       ========================================== -->
+  <div style="background:var(--color-card); border:1px solid var(--color-card-border); border-radius:var(--radius-lg); padding:2rem; margin-bottom:2.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+    <form method="get" action="{% url 'ai_recommendations' %}" id="aiMatcherForm">
+      
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1.5rem; margin-bottom:1.75rem;">
+        
+        <!-- 1. Daily Budget -->
+        <div>
+          <label style="display:block; font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#cbd5e1; margin-bottom:0.5rem;">
+            ① Target Daily Budget (₹)
+          </label>
+          <div style="position:relative;">
+            <span style="position:absolute; left:1rem; top:50%; transform:translateY(-50%); color:var(--color-primary-light); font-weight:700; font-size:1.05rem;">₹</span>
+            <input type="number" name="budget" id="budgetInput" class="form-input" placeholder="e.g. 1500"
+                   value="{{ budget }}" min="100" max="100000" style="padding-left:2.4rem;">
+          </div>
+          <!-- Quick Budget Presets -->
+          <div style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.6rem;">
+            <button type="button" class="budget-preset btn btn-ghost btn-sm" data-val="800" style="font-size:0.75rem; padding:0.2rem 0.55rem;">₹800</button>
+            <button type="button" class="budget-preset btn btn-ghost btn-sm" data-val="1500" style="font-size:0.75rem; padding:0.2rem 0.55rem;">₹1,500</button>
+            <button type="button" class="budget-preset btn btn-ghost btn-sm" data-val="2500" style="font-size:0.75rem; padding:0.2rem 0.55rem;">₹2,500</button>
+            <button type="button" class="budget-preset btn btn-ghost btn-sm" data-val="5000" style="font-size:0.75rem; padding:0.2rem 0.55rem;">₹5,000</button>
+          </div>
+        </div>
+
+        <!-- 2. Preferred Location -->
+        <div>
+          <label style="display:block; font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#cbd5e1; margin-bottom:0.5rem;">
+            ② Preferred Location / Area
+          </label>
+          <div style="position:relative;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary-light)" stroke-width="2" style="position:absolute; left:1rem; top:50%; transform:translateY(-50%);">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            <input type="text" name="location" id="locationInput" class="form-input" placeholder="e.g. Mumbai, Bengaluru, Koramangala..."
+                   value="{{ location }}" style="padding-left:2.5rem;">
+          </div>
+          <div style="font-size:0.75rem; color:#64748b; margin-top:0.4rem;">
+            Matches city, suburb, or nearby neighborhoods.
+          </div>
+        </div>
+
+        <!-- 3. Property Type -->
+        <div>
+          <label style="display:block; font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#cbd5e1; margin-bottom:0.5rem;">
+            ③ Property Type
+          </label>
+          <select name="property_type" class="form-select" id="propertyTypeSelect">
+            {% for val, label in property_type_choices %}
+              <option value="{{ val }}" {% if property_type == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <div style="font-size:0.75rem; color:#64748b; margin-top:0.4rem;">
+            Supports PG, Flat, Private Room, Villa, or All.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 4. Lifestyle & Amenities Preferences -->
+      <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:1.5rem; margin-bottom:1.75rem;">
+        <label style="display:block; font-size:0.82rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#cbd5e1; margin-bottom:0.75rem;">
+          ④ Desired Amenities &amp; Features (Select all that apply)
+        </label>
+        <div style="display:flex; flex-wrap:wrap; gap:0.6rem;">
+          {% for am in available_amenities %}
+            <label class="amenity-chip {% if am in selected_amenities %}active{% endif %}" style="cursor:pointer; user-select:none;">
+              <input type="checkbox" name="amenities" value="{{ am }}" {% if am in selected_amenities %}checked{% endif %} style="display:none;">
+              <span class="chip-text">
+                {% if am == 'WiFi' %}📶 Wi-Fi
+                {% elif am == 'AC' %}❄️ Air Conditioning
+                {% elif am == 'Parking' %}🚗 Parking
+                {% elif am == 'Furnished' %}🛋️ Furnished
+                {% elif am == 'Balcony' %}🌄 Balcony
+                {% elif am == 'Kitchen' %}🍳 Kitchen
+                {% elif am == 'Gym' %}🏋️ Gym
+                {% elif am == 'Swimming Pool' %}🏊 Swimming Pool
+                {% elif am == 'Security' %}🛡️ 24/7 Security
+                {% elif am == 'Power Backup' %}⚡ Power Backup
+                {% else %}{{ am }}
+                {% endif %}
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <div style="display:flex; gap:0.75rem; align-items:center;">
+          <button type="submit" class="btn btn-primary" style="padding:0.75rem 1.75rem; font-weight:700; gap:0.5rem; box-shadow:0 4px 15px rgba(197,139,84,0.35);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Generate AI Matches
+          </button>
+          {% if has_filters %}
+            <a href="{% url 'ai_recommendations' %}" class="btn btn-ghost btn-sm" style="color:#94a3b8;">
+              Clear All Filters
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- AI Memory Status Pill -->
+        <div style="display:inline-flex; align-items:center; gap:0.75rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:9999px; padding:0.4rem 1rem;">
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#4ade80; box-shadow:0 0 8px #4ade80;"></span>
+          <span style="font-size:0.8rem; color:#cbd5e1;">
+            AI Memory: <strong style="color:var(--color-primary-light);">{{ saved_count }}</strong> saved · <strong style="color:#f87171;">{{ dismissed_count }}</strong> dismissed
+          </span>
+          {% if dismissed_count > 0 %}
+            <form method="post" action="{% url 'reset_recommendations' %}" style="display:inline;" onsubmit="return confirm('Restore all dismissed properties to your recommendation feed?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:0.15rem 0.5rem; color:#94a3b8; text-decoration:underline;">
+                Reset Dismissals
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- ==========================================
+       AI RECOMMENDATIONS FEED
+       ========================================== -->
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+    <div>
+      <h2 style="font-size:1.8rem; font-weight:800; color:#ffffff; margin:0 0 0.35rem; display:flex; align-items:center; gap:0.6rem;">
+        <span>Personalized Recommendations</span>
+      </h2>
+      <p style="font-size:0.88rem; color:#94a3b8; margin:0;">
+        Ranked using multi-factor vector matching, budget optimization, and your behavioral preferences.
+      </p>
+    </div>
+    <div style="font-size:0.85rem; color:#64748b;">
+      Evaluated <strong>{{ total_evaluated }}</strong> residences
+    </div>
+  </div>
+
+  {% if recommendations %}
+    <div class="property-grid" id="recommendationsGrid">
+      {% for item in recommendations %}
+        {% with prop=item.property %}
+        <article class="property-card" id="card-{{ prop.id }}" style="position:relative; transition:all 0.3s ease;">
+          
+          <!-- Image Banner & Badges -->
+          <div class="property-card-img-wrap">
+            {% if prop.image %}
+              <img src="{{ prop.image.url }}" alt="{{ prop.title }}" loading="lazy">
+            {% else %}
+              <div class="img-placeholder">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                <span>No Photo</span>
+              </div>
+            {% endif %}
+
+            <!-- Property Type Badge -->
+            <span class="property-type-badge">{{ prop.get_property_type_display }}</span>
+
+            <!-- AI Match Percentage Badge -->
+            <span class="ai-match-badge" style="position:absolute; top:0.85rem; right:0.85rem;
+                         background:linear-gradient(135deg, #10b981 0%, #059669 100%);
+                         color:#ffffff; font-weight:800; font-size:0.75rem; padding:0.35rem 0.75rem;
+                         border-radius:9999px; box-shadow:0 4px 12px rgba(16,185,129,0.4);
+                         display:inline-flex; align-items:center; gap:3px; z-index:2;
+                         border:1px solid rgba(255,255,255,0.25);">
+              ✨ {{ item.score }}% Match
+            </span>
+
+            <!-- Availability Badge on Card -->
+            {% if prop.is_currently_available %}
+              <span class="availability-badge badge-available" style="top:auto; bottom:0.85rem; right:0.85rem;">Available</span>
+            {% else %}
+              <span class="availability-badge badge-unavailable" style="top:auto; bottom:0.85rem; right:0.85rem;">Not Available</span>
+            {% endif %}
+          </div>
+
+          <!-- Body -->
+          <div class="property-card-body">
+            
+            <!-- Quick Actions: Save / Dismiss -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+              <h3 class="property-card-title" style="margin-bottom:0; flex:1; padding-right:0.5rem;">
+                <a href="{% url 'property_detail' prop.pk %}" style="color:inherit; text-decoration:none;">
+                  {{ prop.title }}
+                </a>
+              </h3>
+              
+              <!-- Action Buttons -->
+              <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+                <!-- Save / Bookmark Button -->
+                <button type="button" class="btn-save-toggle {% if item.is_saved %}saved{% endif %}"
+                        data-id="{{ prop.id }}"
+                        title="{% if item.is_saved %}Remove from Saved{% else %}Save / Bookmark Property{% endif %}"
+                        style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+                               width:34px; height:34px; border-radius:50%; display:inline-flex; align-items:center;
+                               justify-content:center; cursor:pointer; color:{% if item.is_saved %}#f43f5e{% else %}#94a3b8{% endif %};
+                               transition:all 0.2s;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="{% if item.is_saved %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2">
+                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                  </svg>
+                </button>
+
+                <!-- Dismiss Button -->
+                <button type="button" class="btn-dismiss-property"
+                        data-id="{{ prop.id }}"
+                        title="Not Interested / Hide Recommendation"
+                        style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+                               width:34px; height:34px; border-radius:50%; display:inline-flex; align-items:center;
+                               justify-content:center; cursor:pointer; color:#94a3b8; transition:all 0.2s;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Location -->
+            <p class="property-card-location" style="margin-bottom:0.75rem;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              {{ prop.location }}
+            </p>
+
+            <!-- Meta details (BHK, Bath) -->
+            <div class="property-card-meta" style="margin-bottom:0.85rem; padding-bottom:0.75rem; border-bottom:1px solid rgba(255,255,255,0.06);">
+              <span>{{ prop.bedrooms }} Bed{{ prop.bedrooms|pluralize }}</span>
+              <span>{{ prop.bathrooms }} Bath{{ prop.bathrooms|pluralize }}</span>
+              {% if prop.average_rating %}
+                <span style="color:#d4af37; font-weight:700;">★ {{ prop.average_rating }}</span>
+              {% endif %}
+            </div>
+
+            <!-- AI Reason Pills (Explainable Recommendation) -->
+            <div style="background:rgba(197,139,84,0.07); border:1px solid rgba(197,139,84,0.18); border-radius:8px; padding:0.65rem 0.85rem; margin-bottom:1.1rem;">
+              <div style="font-size:0.7rem; text-transform:uppercase; font-weight:800; letter-spacing:1px; color:var(--color-primary-light); margin-bottom:0.35rem;">
+                Why AI Picked This:
+              </div>
+              <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.25rem;">
+                {% for r in item.reasons %}
+                  <li style="font-size:0.78rem; color:#cbd5e1; line-height:1.4;">
+                    {{ r }}
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+
+            <!-- Card Footer -->
+            <div class="property-card-footer" style="padding-top:0;">
+              <div>
+                <div class="property-price">₹{{ prop.rent|floatformat:0 }}<small>/day</small></div>
+              </div>
+              <a href="{% url 'property_detail' prop.pk %}" class="btn btn-outline btn-sm">View Details</a>
+            </div>
+
+          </div>
+        </article>
+        {% endwith %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <!-- Empty State -->
+    <div style="background:var(--color-card); border:1px solid var(--color-card-border); border-radius:var(--radius-lg); padding:4rem 2rem; text-align:center;">
+      <div style="width:64px; height:64px; border-radius:50%; background:rgba(197,139,84,0.12); display:inline-flex; align-items:center; justify-content:center; color:var(--color-primary-light); margin-bottom:1.25rem;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
+      <h3 style="font-size:1.4rem; font-weight:700; color:#ffffff; margin-bottom:0.5rem;">No Direct Matches Found</h3>
+      <p style="font-size:0.92rem; color:#94a3b8; max-width:480px; margin:0 auto 1.5rem; line-height:1.6;">
+        Try broadening your daily budget range, clearing specific amenity requirements, or resetting your dismissed properties list.
+      </p>
+      <div style="display:flex; justify-content:center; gap:0.75rem;">
+        <a href="{% url 'ai_recommendations' %}" class="btn btn-primary btn-sm">Reset All Search Filters</a>
+        {% if dismissed_count > 0 %}
+          <form method="post" action="{% url 'reset_recommendations' %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-ghost btn-sm">Restore Dismissed Properties</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+
+<!-- CSRF Token for AJAX -->
+{% csrf_token %}
+
+<style>
+  .amenity-chip {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 9999px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    transition: all 0.2s ease;
+  }
+  .amenity-chip:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.2);
+    color: #ffffff;
+  }
+  .amenity-chip.active {
+    background: rgba(197,139,84,0.18);
+    border-color: var(--color-primary);
+    color: var(--color-primary-light);
+    font-weight: 600;
+  }
+  .btn-save-toggle:hover {
+    transform: scale(1.1);
+    background: rgba(244,63,94,0.15) !important;
+    border-color: rgba(244,63,94,0.4) !important;
+    color: #f43f5e !important;
+  }
+  .btn-dismiss-property:hover {
+    transform: scale(1.1);
+    background: rgba(239,68,68,0.15) !important;
+    border-color: rgba(239,68,68,0.4) !important;
+    color: #ef4444 !important;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 1. Budget preset buttons
+    const budgetInput = document.getElementById('budgetInput');
+    document.querySelectorAll('.budget-preset').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (budgetInput) {
+          budgetInput.value = this.getAttribute('data-val');
+          document.getElementById('aiMatcherForm').submit();
+        }
+      });
+    });
+
+    // 2. Interactive amenity chips toggle
+    document.querySelectorAll('.amenity-chip').forEach(function(chip) {
+      const checkbox = chip.querySelector('input[type="checkbox"]');
+      chip.addEventListener('click', function(e) {
+        if (e.target !== checkbox) {
+          checkbox.checked = !checkbox.checked;
+        }
+        if (checkbox.checked) {
+          chip.classList.add('active');
+        } else {
+          chip.classList.remove('active');
+        }
+      });
+    });
+
+    // Helper for CSRF token
+    function getCsrfToken() {
+      const input = document.querySelector('[name=csrfmiddlewaretoken]');
+      return input ? input.value : '';
+    }
+
+    // 3. AJAX Save / Bookmark Toggle
+    document.querySelectorAll('.btn-save-toggle').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const propId = this.getAttribute('data-id');
+        const that = this;
+
+        fetch('/recommendations/toggle-save/' + propId + '/', {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const svg = that.querySelector('svg');
+            if (data.is_saved) {
+              that.classList.add('saved');
+              that.style.color = '#f43f5e';
+              svg.setAttribute('fill', 'currentColor');
+              that.setAttribute('title', 'Remove from Saved');
+            } else {
+              that.classList.remove('saved');
+              that.style.color = '#94a3b8';
+              svg.setAttribute('fill', 'none');
+              that.setAttribute('title', 'Save / Bookmark Property');
+            }
+          }
+        })
+        .catch(err => console.error(err));
+      });
+    });
+
+    // 4. AJAX Dismiss / Reject Button (Novelty: learns in real time!)
+    document.querySelectorAll('.btn-dismiss-property').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const propId = this.getAttribute('data-id');
+        const card = document.getElementById('card-' + propId);
+
+        if (confirm('Dismiss this property? AI will learn this preference and refine future matches.')) {
+          // Visual fade out
+          if (card) {
+            card.style.opacity = '0.3';
+            card.style.transform = 'scale(0.95)';
+          }
+
+          fetch('/recommendations/dismiss/' + propId + '/', {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': getCsrfToken(),
+              'X-Requested-With': 'XMLHttpRequest',
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success && card) {
+              card.style.transition = 'all 0.4s ease';
+              card.style.opacity = '0';
+              card.style.transform = 'scale(0.8)';
+              setTimeout(() => card.remove(), 400);
+            }
+          })
+          .catch(err => {
+            if (card) {
+              card.style.opacity = '1';
+              card.style.transform = 'none';
+            }
+            console.error(err);
+          });
+        }
+      });
+    });
+
+  });
+</script>
+{% endblock %}
