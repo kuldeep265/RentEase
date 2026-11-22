@@ -42,10 +42,27 @@
                 📍 {{ booking.property.location }}
               </p>
             </div>
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-              <span class="status-badge status-{{ booking.status }}">
-                {{ booking.get_status_display }}
-              </span>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+              {% if booking.payment_status == 'PAID' or booking.status == 'approved' %}
+                <span class="status-badge" style="background:rgba(74,222,128,0.15); color:#4ade80; border:1px solid rgba(74,222,128,0.3); font-weight:700;">
+                  ✓ Confirmed &amp; Paid
+                </span>
+                <span style="font-size:0.72rem; color:#94a3b8;">
+                  {{ booking.payment_method|default:'Cashfree Online' }}
+                </span>
+              {% elif booking.status == 'completed' %}
+                <span class="status-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">
+                  Completed
+                </span>
+              {% elif booking.status == 'cancelled' or booking.payment_status == 'FAILED' %}
+                <span class="status-badge" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);">
+                  Cancelled
+                </span>
+              {% else %}
+                <span class="status-badge" style="background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid rgba(251,191,36,0.3);">
+                  Awaiting Payment
+                </span>
+              {% endif %}
               {% if booking.checked_out %}
                 <span style="font-size:0.72rem; color:#4ade80; font-weight:600;">
                   ✓ Checked out {{ booking.checkout_date|date:"d M Y" }}
@@ -73,33 +90,33 @@
           <!-- Date / duration / rent row -->
           <div style="display:flex; gap:1.5rem; margin-top:0.85rem; flex-wrap:wrap;">
             <div style="font-size:0.84rem; color:#94a3b8;">
-              <strong style="color:#ffffff;">Move-in:</strong>
+              <strong style="color:#ffffff;">Check-in:</strong>
               {{ booking.start_date|date:"d M Y" }}
-            </div>
-            <div style="font-size:0.84rem; color:#94a3b8;">
-              <strong style="color:#ffffff;">Duration:</strong>
-              {{ booking.duration_display }}
             </div>
             {% if booking.end_date %}
             <div style="font-size:0.84rem; color:#94a3b8;">
-              <strong style="color:#ffffff;">Expected Checkout:</strong>
+              <strong style="color:#ffffff;">Check-out:</strong>
               {{ booking.end_date|date:"d M Y" }}
             </div>
             {% endif %}
             <div style="font-size:0.84rem; color:#94a3b8;">
-              <strong style="color:#ffffff;">Requested:</strong>
-              {{ booking.created_at|date:"d M Y" }}
+              <strong style="color:#ffffff;">Duration:</strong>
+              {{ booking.duration_display }}
             </div>
             <div style="font-size:0.84rem; color:#94a3b8;">
-              <strong style="color:var(--color-primary-light);">Rent:</strong>
-              ₹{{ booking.property.rent|floatformat:0 }}/mo
+              <strong style="color:var(--color-primary-light);">Rate:</strong>
+              ₹{{ booking.property.rent|floatformat:0 }} / day
             </div>
             {% if booking.payment_amount %}
             <div style="font-size:0.84rem; color:#94a3b8;">
-              <strong style="color:#4ade80;">Paid:</strong>
+              <strong style="color:#4ade80;">Total:</strong>
               ₹{{ booking.payment_amount|floatformat:0 }}
             </div>
             {% endif %}
+            <div style="font-size:0.84rem; color:#94a3b8;">
+              <strong style="color:#cbd5e1;">Booked On:</strong>
+              {{ booking.created_at|date:"d M Y" }}
+            </div>
           </div>
 
           {% if booking.message %}
@@ -108,11 +125,25 @@
             </p>
           {% endif %}
 
-          <div style="margin-top:0.85rem;">
+          <div style="margin-top:0.85rem; display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            {% if booking.payment_status == 'PENDING' and booking.status != 'cancelled' %}
+              <a href="{% url 'cashfree_checkout' booking.pk %}"
+                 class="btn btn-primary btn-sm" style="font-size:0.82rem; padding:0.45rem 1rem; gap:0.4rem;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                Complete Payment (₹{{ booking.payment_amount|floatformat:0 }})
+              </a>
+            {% endif %}
+
             <a href="{% url 'property_detail' booking.property.pk %}#reviews"
                class="btn btn-outline btn-sm" style="font-size:0.8rem; padding:0.35rem 0.85rem;">
               ★ Rate &amp; Review Property
             </a>
+
+            {% if booking.payment_status == 'PAID' and booking.cf_payment_id %}
+              <span style="font-size:0.75rem; color:#64748b;">
+                Receipt: <strong style="color:#cbd5e1; font-family:monospace;">{{ booking.cf_payment_id }}</strong>
+              </span>
+            {% endif %}
           </div>
         </div>
 

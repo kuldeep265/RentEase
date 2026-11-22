@@ -10,21 +10,18 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
       <a href="{% url 'property_detail' property.pk %}">{{ property.title|truncatechars:30 }}</a>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      <span>Book</span>
+      <span>Instant Booking</span>
     </div>
-    <h1>Request to Book</h1>
-    <p>Fill in your details, choose your stay duration, and pay via UPI QR.</p>
+    <h1>Confirm &amp; Pay</h1>
+    <p>Select your dates, enter guest details, and proceed directly to Cashfree Sandbox Payment.</p>
   </div>
 </div>
-
-<!-- QR.js CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <div class="container" style="max-width:1060px; padding-bottom:4rem;">
   <div style="display:grid; grid-template-columns:1.3fr 1fr; gap:2.5rem; align-items:start;">
 
     <!-- ══════════════════════════════════════════
-         LEFT  — Booking Form
+         LEFT — Booking Form
     ══════════════════════════════════════════ -->
     <div>
 
@@ -40,8 +37,13 @@
 
         <!-- ── Section 1: Contact info ── -->
         <div class="form-card" style="margin-bottom:1.5rem;">
-          <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; font-weight:700;
-                    color:var(--color-primary-light); margin-bottom:1.1rem;">① Your Contact Information</p>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.1rem;">
+            <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; font-weight:700;
+                      color:var(--color-primary-light); margin:0;">① Guest Information</p>
+            <span style="font-size:0.72rem; color:#4ade80; background:rgba(74,222,128,0.1); padding:2px 8px; border-radius:4px;">
+              Required for Payment
+            </span>
+          </div>
 
           <div class="form-group">
             <label class="form-label" for="{{ form.tenant_full_name.id_for_label }}">
@@ -53,124 +55,91 @@
 
           <div class="form-group" style="margin-bottom:0;">
             <label class="form-label" for="{{ form.tenant_contact.id_for_label }}">
-              Contact Number <span class="required">*</span>
+              Contact Phone Number <span class="required">*</span>
             </label>
             {{ form.tenant_contact }}
             {% for e in form.tenant_contact.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
-            <p style="font-size:0.76rem; color:#64748b; margin-top:0.3rem;">Shared only with the property owner.</p>
+            <p style="font-size:0.76rem; color:#64748b; margin-top:0.35rem;">
+              Used for Cashfree order creation and booking confirmation receipt.
+            </p>
           </div>
         </div>
 
-        <!-- ── Section 2: Move-in date ── -->
+        <!-- ── Section 2: Dates & Guests ── -->
         <div class="form-card" style="margin-bottom:1.5rem;">
           <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; font-weight:700;
-                    color:var(--color-primary-light); margin-bottom:1.1rem;">② Move-in Date</p>
+                    color:var(--color-primary-light); margin-bottom:1.1rem;">② Stay Dates &amp; Guests</p>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label" for="{{ form.start_date.id_for_label }}">
+                Check-in Date <span class="required">*</span>
+              </label>
+              {{ form.start_date }}
+              {% for e in form.start_date.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label" for="{{ form.end_date.id_for_label }}">
+                Check-out Date <span class="required">*</span>
+              </label>
+              {{ form.end_date }}
+              {% for e in form.end_date.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+            </div>
+          </div>
 
           <div class="form-group" style="margin-bottom:0;">
-            <label class="form-label" for="{{ form.start_date.id_for_label }}">
-              Preferred Move-in Date <span class="required">*</span>
+            <label class="form-label" for="{{ form.guests.id_for_label }}">
+              Number of Guests <span class="required">*</span>
             </label>
-            {{ form.start_date }}
-            {% for e in form.start_date.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+            {{ form.guests }}
+            {% for e in form.guests.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
           </div>
         </div>
 
-        <!-- ── Section 3: Duration toggle ── -->
-        <div class="form-card" style="margin-bottom:1.5rem;">
-          <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; font-weight:700;
-                    color:var(--color-primary-light); margin-bottom:1.1rem;">③ Rental Duration</p>
-
-          <!-- Month / Day toggle pills -->
-          <div style="display:flex; gap:0.6rem; margin-bottom:1.25rem;" id="durationToggle">
-            <button type="button" id="btnMonths"
-                    onclick="switchDuration('months')"
-                    style="flex:1; padding:0.6rem 1rem; border-radius:9999px; font-weight:700; font-size:0.9rem;
-                           border:2px solid var(--color-primary); cursor:pointer; transition:all .2s;
-                           background:var(--color-primary); color:#0a0a12;">
-              📅 Months
-            </button>
-            <button type="button" id="btnDays"
-                    onclick="switchDuration('days')"
-                    style="flex:1; padding:0.6rem 1rem; border-radius:9999px; font-weight:700; font-size:0.9rem;
-                           border:2px solid rgba(255,255,255,0.15); cursor:pointer; transition:all .2s;
-                           background:transparent; color:#94a3b8;">
-              🗓️ Days
-            </button>
-          </div>
-
-          <!-- Hidden radio — synced by JS -->
-          <div style="display:none;">{{ form.duration_type }}</div>
-
-          <!-- Months input -->
-          <div id="monthsBlock">
-            <label class="form-label" for="id_duration_months">
-              Number of Months <span class="required">*</span>
-              <span style="font-size:0.76rem; color:#64748b; font-weight:400;">(1 – 36)</span>
-            </label>
-            {{ form.duration_months }}
-            {% for e in form.duration_months.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
-            <p style="font-size:0.76rem; color:#94a3b8; margin-top:0.3rem;">
-              Rate: <strong style="color:#ffffff;">₹{{ monthly_rent|floatformat:0 }}</strong> / month
-            </p>
-          </div>
-
-          <!-- Days input (hidden initially) -->
-          <div id="daysBlock" style="display:none;">
-            <label class="form-label" for="id_duration_days">
-              Number of Days <span class="required">*</span>
-              <span style="font-size:0.76rem; color:#64748b; font-weight:400;">(1 – 365)</span>
-            </label>
-            {{ form.duration_days }}
-            {% for e in form.duration_days.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
-            <p style="font-size:0.76rem; color:#94a3b8; margin-top:0.3rem;">
-              Daily rate: <strong style="color:#ffffff;">₹{{ daily_rate|floatformat:2 }}</strong>
-              <span style="color:#64748b;">(monthly rent ÷ 30)</span>
-            </p>
-          </div>
-        </div>
-
-        <!-- ── Section 4: Payment amount (auto-computed) ── -->
+        <!-- ── Section 3: Cost Breakdown ── -->
         <div class="form-card" style="margin-bottom:1.5rem; border-color:rgba(197,139,84,0.35);">
           <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; font-weight:700;
-                    color:var(--color-primary-light); margin-bottom:1.1rem;">④ Payment Amount</p>
+                    color:var(--color-primary-light); margin-bottom:1.1rem;">③ Transparent Pricing</p>
 
           <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
             <div>
-              <div style="font-size:0.82rem; color:#94a3b8; margin-bottom:0.25rem;">Total due (auto-calculated)</div>
+              <div style="font-size:0.82rem; color:#94a3b8; margin-bottom:0.25rem;">Total Booking Payable</div>
               <div id="paymentDisplay"
                    style="font-family:'Outfit',sans-serif; font-size:2.2rem; font-weight:800; color:var(--color-primary-light);">
-                ₹{{ monthly_rent|floatformat:0 }}
+                ₹{{ initial_amount|floatformat:0 }}
               </div>
-              <div style="font-size:0.75rem; color:#64748b; margin-top:0.2rem;">Minimum ₹1,000 applies</div>
+              <div style="font-size:0.75rem; color:#4ade80; margin-top:0.2rem;">
+                ✓ 100% Instant Confirmation upon Payment
+              </div>
             </div>
-            <!-- Hidden input carries the value to the server -->
-            <input type="hidden" name="payment_amount" id="id_payment_amount" value="{{ monthly_rent|floatformat:0 }}">
-            <div id="paymentBreakdown" style="font-size:0.82rem; color:#94a3b8; text-align:right;">
-              1 month × ₹{{ monthly_rent|floatformat:0 }}
+            <div id="paymentBreakdown" style="font-size:0.88rem; color:#cbd5e1; text-align:right;">
+              {{ initial_days }} days × ₹{{ daily_rate|floatformat:0 }}/day
             </div>
           </div>
         </div>
 
-        <!-- ── Section 5: Message ── -->
+        <!-- ── Section 4: Message ── -->
         <div class="form-card" style="margin-bottom:1.5rem;">
           <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; font-weight:700;
-                    color:var(--color-primary-light); margin-bottom:1.1rem;">⑤ Message to Owner <span style="font-weight:400; text-transform:none; letter-spacing:0;">(optional)</span></p>
+                    color:var(--color-primary-light); margin-bottom:1.1rem;">④ Special Requests <span style="font-weight:400; text-transform:none; letter-spacing:0;">(optional)</span></p>
           <div class="form-group" style="margin-bottom:0;">
             {{ form.message }}
           </div>
         </div>
 
         <div style="display:flex; gap:0.85rem; margin-top:0.5rem;">
-          <a href="{% url 'property_detail' property.pk %}" class="btn btn-ghost">Back</a>
-          <button type="submit" class="btn btn-primary" style="flex:1; justify-content:center; padding:0.9rem;">
-            Confirm &amp; Send Booking Request
+          <a href="{% url 'property_detail' property.pk %}" class="btn btn-ghost">Cancel</a>
+          <button type="submit" id="btnSubmitBooking" class="btn btn-primary" style="flex:1; justify-content:center; padding:0.95rem 1.25rem; font-weight:700; font-size:1.02rem; gap:0.5rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <span id="btnSubmitText">Proceed to Payment — ₹{{ initial_amount|floatformat:0 }}</span>
           </button>
         </div>
       </form>
     </div>
 
     <!-- ══════════════════════════════════════════
-         RIGHT — Property card + QR payment panel
+         RIGHT — Property card + Cashfree Gateway panel
     ══════════════════════════════════════════ -->
     <div style="position:sticky; top:90px; display:flex; flex-direction:column; gap:1.5rem;">
 
@@ -194,16 +163,15 @@
                       border-top:1px solid rgba(255,255,255,0.08); padding-top:0.9rem; gap:0.5rem; flex-wrap:wrap;">
             <span>{{ property.bedrooms }} BHK · {{ property.bathrooms }} Bath</span>
             <span style="font-family:'Outfit',sans-serif; font-weight:800; color:var(--color-primary-light);">
-              ₹{{ monthly_rent|floatformat:0 }}/mo
+              ₹{{ daily_rate|floatformat:0 }} / day
             </span>
           </div>
-          <!-- Available rooms -->
+          <!-- Available units -->
           <div style="margin-top:0.75rem; display:flex; align-items:center; justify-content:space-between;
                       background:rgba(255,255,255,0.04); border-radius:8px; padding:0.55rem 0.8rem;">
-            <span style="font-size:0.8rem; color:#94a3b8;">Available Rooms</span>
-            <span style="font-family:'Outfit',sans-serif; font-weight:800; font-size:0.95rem;
-              color:{% if property.available_rooms > 2 %}#4ade80{% elif property.available_rooms == 1 %}#f97316{% else %}#ef4444{% endif %};">
-              {{ property.available_rooms }}/{{ property.total_rooms }}
+            <span style="font-size:0.8rem; color:#94a3b8;">Total Units / Rooms</span>
+            <span style="font-family:'Outfit',sans-serif; font-weight:800; font-size:0.95rem; color:#4ade80;">
+              {{ property.total_rooms }} unit{{ property.total_rooms|pluralize }}
             </span>
           </div>
           <div style="margin-top:0.65rem; font-size:0.8rem; color:var(--color-primary-light);">
@@ -212,37 +180,50 @@
         </div>
       </div>
 
-      <!-- ── UPI QR Payment Panel ── -->
-      <div class="form-card" style="border-color:rgba(197,139,84,0.4); text-align:center;">
-        <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; font-weight:700;
-                  color:var(--color-primary-light); margin-bottom:0.5rem;">UPI Payment QR</p>
-        <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:1.1rem; line-height:1.5;">
-          Scan with any UPI app — PhonePe, GPay, Paytm, etc. — to pay the booking amount to the owner.
+      <!-- ── Cashfree Gateway Info Panel ── -->
+      <div class="form-card" style="border-color:rgba(197,139,84,0.4);">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.85rem;">
+          <p style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1.5px; font-weight:700;
+                    color:var(--color-primary-light); margin:0;">Payment Gateway</p>
+          <span style="font-size:0.7rem; font-weight:700; color:#fbbf24; background:rgba(251,191,36,0.12); padding:2px 8px; border-radius:4px;">
+            Cashfree Sandbox
+          </span>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem; padding:0.85rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px;">
+          <div style="width:36px; height:36px; border-radius:8px; background:linear-gradient(135deg, #c58b54, #e0a96d); display:flex; align-items:center; justify-content:center; color:#000; font-weight:800; font-size:1.1rem; flex-shrink:0;">
+            ✓
+          </div>
+          <div>
+            <div style="font-size:0.9rem; font-weight:700; color:#ffffff;">Instant Confirmation</div>
+            <div style="font-size:0.75rem; color:#94a3b8;">No manual accept/reject waiting</div>
+          </div>
+        </div>
+
+        <p style="font-size:0.82rem; color:#cbd5e1; line-height:1.5; margin-bottom:1.1rem;">
+          When you click <strong>Proceed to Payment</strong>, Cashfree's secure sandbox checkout opens where you can pay via:
         </p>
 
-        <!-- QR canvas container -->
-        <div id="qrcode"
-             style="display:inline-block; padding:12px; background:#ffffff; border-radius:12px;
-                    box-shadow:0 4px 20px rgba(0,0,0,0.5); margin-bottom:1rem;"></div>
-
-        <!-- Amount label under QR -->
-        <div style="font-family:'Outfit',sans-serif; font-size:1.6rem; font-weight:800;
-                    color:var(--color-primary-light); margin-bottom:0.25rem;" id="qrAmountLabel">
-          ₹{{ monthly_rent|floatformat:0 }}
-        </div>
-        <div style="font-size:0.78rem; color:#64748b; margin-bottom:1rem;">
-          Pay to: <strong style="color:#cbd5e1;">{{ owner_name }}</strong>
-        </div>
-
-        <!-- UPI ID display -->
-        <div style="font-size:0.75rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
-                    border-radius:8px; padding:0.5rem 0.75rem; color:#94a3b8; word-break:break-all;">
-          UPI: <strong style="color:#ffffff;">{{ owner_upi }}</strong>
+        <!-- Payment badges -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-bottom:1.25rem;">
+          <div style="padding:0.6rem; background:rgba(255,255,255,0.04); border-radius:8px; font-size:0.78rem; color:#cbd5e1; text-align:center;">
+            💳 Cards (Visa, MC)
+          </div>
+          <div style="padding:0.6rem; background:rgba(255,255,255,0.04); border-radius:8px; font-size:0.78rem; color:#cbd5e1; text-align:center;">
+            📱 UPI (GPay, PhonePe)
+          </div>
+          <div style="padding:0.6rem; background:rgba(255,255,255,0.04); border-radius:8px; font-size:0.78rem; color:#cbd5e1; text-align:center;">
+            🏦 Netbanking (50+ Banks)
+          </div>
+          <div style="padding:0.6rem; background:rgba(255,255,255,0.04); border-radius:8px; font-size:0.78rem; color:#cbd5e1; text-align:center;">
+            👛 Digital Wallets
+          </div>
         </div>
 
-        <p style="font-size:0.72rem; color:#64748b; margin-top:0.85rem; line-height:1.5;">
-          After paying, submit your booking request. The owner will verify payment and confirm your booking.
-        </p>
+        <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.75rem; color:#64748b; border-top:1px solid rgba(255,255,255,0.06); padding-top:0.85rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>256-bit Encrypted Checkout · Cashfree Payments</span>
+        </div>
       </div>
 
     </div><!-- /right column -->
@@ -250,110 +231,87 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════
-     JavaScript — duration toggle + live calculator + QR
+     JavaScript — date calculator + live amount update
 ═══════════════════════════════════════════════ -->
 <script>
-  const MONTHLY_RENT = {{ monthly_rent }};
-  const DAILY_RATE   = {{ daily_rate }};
-  const OWNER_UPI    = "{{ owner_upi|escapejs }}";
-  const OWNER_NAME   = "{{ owner_name|escapejs }}";
-  const PROP_TITLE   = "{{ property.title|escapejs }}";
+  const DAILY_RATE = {{ daily_rate }};
 
-  let currentType  = 'months';
-  let qrInstance   = null;
-
-  /* ── build QR ── */
-  function buildQR(amount) {
-    const note = encodeURIComponent("RentEase booking: " + PROP_TITLE);
-    const upiUrl = `upi://pay?pa=${encodeURIComponent(OWNER_UPI)}&pn=${encodeURIComponent(OWNER_NAME)}&am=${amount}&cu=INR&tn=${note}`;
-    const container = document.getElementById('qrcode');
-    container.innerHTML = '';          // clear previous
-    qrInstance = new QRCode(container, {
-      text: upiUrl,
-      width: 180,
-      height: 180,
-      colorDark: '#000000',
-      colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.M,
-    });
-  }
-
-  /* ── update amount display, hidden input, and QR ── */
   function updatePayment() {
-    let raw = 0;
-    let breakdown = '';
+    const startInput = document.getElementById('id_start_date');
+    const endInput = document.getElementById('id_end_date');
 
-    if (currentType === 'months') {
-      const m = parseInt(document.getElementById('id_duration_months').value) || 0;
-      raw = m * MONTHLY_RENT;
-      breakdown = m + ' month' + (m !== 1 ? 's' : '') + ' × ₹' + MONTHLY_RENT.toLocaleString('en-IN');
-    } else {
-      const d = parseInt(document.getElementById('id_duration_days').value) || 0;
-      raw = Math.round(d * DAILY_RATE * 100) / 100;
-      breakdown = d + ' day' + (d !== 1 ? 's' : '') + ' × ₹' + DAILY_RATE.toFixed(2);
+    if (!startInput || !endInput) return;
+
+    const sVal = startInput.value;
+    const eVal = endInput.value;
+
+    let days = 1;
+    if (sVal && eVal) {
+      const s = new Date(sVal);
+      const e = new Date(eVal);
+      if (e > s) {
+        const diff = Math.abs(e - s);
+        days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      }
     }
 
-    const amount = Math.max(raw, 1000);
-    const formatted = '₹' + amount.toLocaleString('en-IN', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+    const total = Math.round(days * DAILY_RATE * 100) / 100;
+    const formatted = '₹' + total.toLocaleString('en-IN');
+    const breakdown = `${days} day${days !== 1 ? 's' : ''} × ₹${DAILY_RATE.toLocaleString('en-IN')}/day`;
 
-    document.getElementById('paymentDisplay').textContent = formatted;
-    document.getElementById('qrAmountLabel').textContent  = formatted;
-    document.getElementById('id_payment_amount').value    = amount.toFixed(2);
-    document.getElementById('paymentBreakdown').textContent = breakdown + (raw < 1000 && raw > 0 ? ' (min ₹1,000 applied)' : '');
+    const payDisp = document.getElementById('paymentDisplay');
+    const payBreak = document.getElementById('paymentBreakdown');
+    const btnText = document.getElementById('btnSubmitText');
 
-    if (amount >= 1000) buildQR(amount.toFixed(2));
+    if (payDisp) payDisp.textContent = formatted;
+    if (payBreak) payBreak.textContent = breakdown;
+    if (btnText) btnText.textContent = `Proceed to Payment — ${formatted}`;
   }
 
-  /* ── toggle between months and days ── */
-  function switchDuration(type) {
-    currentType = type;
+  document.addEventListener('DOMContentLoaded', function () {
+    const startInput = document.getElementById('id_start_date');
+    const endInput = document.getElementById('id_end_date');
 
-    // Update hidden radio
-    document.querySelectorAll('input[name="duration_type"]').forEach(r => {
-      r.checked = (r.value === type);
-    });
+    if (startInput) {
+      startInput.addEventListener('change', function() {
+        if (startInput.value) {
+          const s = new Date(startInput.value);
+          const minOut = new Date(s);
+          minOut.setDate(minOut.getDate() + 1);
+          if (endInput) {
+            endInput.min = minOut.toISOString().split('T')[0];
+            const currentE = new Date(endInput.value);
+            if (!endInput.value || currentE <= s) {
+              const nextDay = new Date(s);
+              nextDay.setDate(nextDay.getDate() + 2);
+              endInput.value = nextDay.toISOString().split('T')[0];
+            }
+          }
+        }
+        updatePayment();
+      });
+    }
 
-    const monthsBlock = document.getElementById('monthsBlock');
-    const daysBlock   = document.getElementById('daysBlock');
-    const btnM        = document.getElementById('btnMonths');
-    const btnD        = document.getElementById('btnDays');
+    if (endInput) {
+      endInput.addEventListener('change', updatePayment);
+    }
 
-    if (type === 'months') {
-      monthsBlock.style.display = '';
-      daysBlock.style.display   = 'none';
-      // Clear days so it doesn't get submitted
-      document.getElementById('id_duration_days').value = '';
-      // Active / inactive pill styles
-      btnM.style.background   = 'var(--color-primary)';
-      btnM.style.color        = '#0a0a12';
-      btnM.style.borderColor  = 'var(--color-primary)';
-      btnD.style.background   = 'transparent';
-      btnD.style.color        = '#94a3b8';
-      btnD.style.borderColor  = 'rgba(255,255,255,0.15)';
-    } else {
-      monthsBlock.style.display = 'none';
-      daysBlock.style.display   = '';
-      document.getElementById('id_duration_months').value = '';
-      btnD.style.background   = 'var(--color-primary)';
-      btnD.style.color        = '#0a0a12';
-      btnD.style.borderColor  = 'var(--color-primary)';
-      btnM.style.background   = 'transparent';
-      btnM.style.color        = '#94a3b8';
-      btnM.style.borderColor  = 'rgba(255,255,255,0.15)';
+    const bookingForm = document.getElementById('bookingForm');
+    const submitBtn = document.getElementById('btnSubmitBooking');
+    const btnTextElem = document.getElementById('btnSubmitText');
+    if (bookingForm && submitBtn) {
+      bookingForm.addEventListener('submit', function() {
+        if (bookingForm.checkValidity()) {
+          setTimeout(function() {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.85';
+            if (btnTextElem) btnTextElem.textContent = 'Connecting to Cashfree...';
+          }, 10);
+        }
+      });
     }
 
     updatePayment();
-  }
-
-  /* ── attach live listeners ── */
-  document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('id_duration_months').addEventListener('input', updatePayment);
-    document.getElementById('id_duration_days').addEventListener('input', updatePayment);
-
-    // If the form was re-rendered with errors, restore the active duration type
-    const checkedRadio = document.querySelector('input[name="duration_type"]:checked');
-    const initType = checkedRadio ? checkedRadio.value : 'months';
-    switchDuration(initType);
   });
 </script>
 {% endblock %}

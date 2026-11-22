@@ -144,9 +144,9 @@ class PropertyForm(forms.ModelForm):
                 'class': 'form-input',
             }),
             'rent': forms.NumberInput(attrs={
-                'placeholder': 'Monthly rent in ₹',
+                'placeholder': 'Daily rent in ₹ (e.g. 2500)',
                 'class': 'form-input',
-                'min': '1000',
+                'min': '100',
             }),
             'property_type': forms.Select(attrs={'class': 'form-input'}),
             'bedrooms': forms.NumberInput(attrs={
@@ -179,6 +179,7 @@ class PropertyForm(forms.ModelForm):
             'is_available': forms.CheckboxInput(attrs={'class': 'form-checkbox'}),
         }
         labels = {
+            'rent': 'Rent per Day (₹)',
             'total_rooms': 'Total Rooms / Units',
             'available_rooms': 'Available Rooms',
         }
@@ -189,8 +190,8 @@ class PropertyForm(forms.ModelForm):
 
     def clean_rent(self):
         rent = self.cleaned_data.get('rent')
-        if rent is not None and rent < 1000:
-            raise forms.ValidationError("Monthly rent must be at least ₹1,000.")
+        if rent is not None and rent < 100:
+            raise forms.ValidationError("Daily rent must be at least ₹100.")
         return rent
 
     def clean_bedrooms(self):
@@ -237,17 +238,17 @@ class PropertyForm(forms.ModelForm):
 
 class BookingForm(forms.ModelForm):
     """
-    ModelForm for submitting a booking request.
-    property and tenant are NOT in the form — they are set in the view.
-    Includes tenant contact info, duration type (months/days), and payment amount.
+    ModelForm for submitting a daily booking request.
+    property and tenant are set in the view.
+    Collects tenant contact, check-in, check-out dates, guest count, and message.
     """
 
     class Meta:
         model = Booking
         fields = [
             'tenant_full_name', 'tenant_contact',
-            'start_date', 'duration_type', 'duration_months', 'duration_days',
-            'payment_amount', 'message',
+            'start_date', 'end_date', 'guests',
+            'message',
         ]
         widgets = {
             'tenant_full_name': forms.TextInput(attrs={
@@ -264,55 +265,43 @@ class BookingForm(forms.ModelForm):
             'start_date': forms.DateInput(attrs={
                 'type': 'date',
                 'class': 'form-input',
+                'id': 'id_start_date',
             }),
-            'duration_type': forms.RadioSelect(attrs={
-                'class': 'duration-radio',
+            'end_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-input',
+                'id': 'id_end_date',
             }),
-            'duration_months': forms.NumberInput(attrs={
+            'guests': forms.NumberInput(attrs={
                 'class': 'form-input',
                 'min': '1',
-                'max': '36',
-                'placeholder': 'e.g. 6',
-                'id': 'id_duration_months',
-            }),
-            'duration_days': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'min': '1',
-                'max': '365',
-                'placeholder': 'e.g. 30',
-                'id': 'id_duration_days',
-            }),
-            'payment_amount': forms.NumberInput(attrs={
-                'class': 'form-input',
-                'min': '1000',
-                'placeholder': 'Min ₹1,000',
-                'id': 'id_payment_amount',
-                'readonly': 'readonly',
+                'max': '50',
+                'id': 'id_guests',
+                'value': '1',
             }),
             'message': forms.Textarea(attrs={
                 'rows': 3,
-                'placeholder': 'Optional: tell the owner about yourself or any requirements.',
+                'placeholder': 'Optional: tell the host about yourself or special requests.',
                 'class': 'form-input',
             }),
         }
         labels = {
             'tenant_full_name': 'Your Full Name',
             'tenant_contact': 'Contact Number',
-            'start_date': 'Preferred Move-in Date',
-            'duration_type': 'Book By',
-            'duration_months': 'Number of Months',
-            'duration_days': 'Number of Days',
-            'payment_amount': 'Payment Amount (₹)',
-            'message': 'Message to Owner (optional)',
+            'start_date': 'Check-in Date',
+            'end_date': 'Check-out Date',
+            'guests': 'Number of Guests',
+            'message': 'Message to Host (optional)',
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, property_obj=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.property_obj = property_obj
         self.fields['tenant_full_name'].required = True
         self.fields['tenant_contact'].required = True
-        self.fields['duration_months'].required = False
-        self.fields['duration_days'].required = False
-        self.fields['payment_amount'].required = False
+        self.fields['start_date'].required = True
+        self.fields['end_date'].required = True
+        self.fields['guests'].required = True
 
     def clean_tenant_contact(self):
         contact = self.cleaned_data.get('tenant_contact', '').strip()
@@ -327,29 +316,24 @@ class BookingForm(forms.ModelForm):
     def clean_start_date(self):
         start_date = self.cleaned_data.get('start_date')
         if start_date and start_date < timezone.now().date():
-            raise forms.ValidationError("Start date cannot be in the past.")
+            raise forms.ValidationError("Check-in date cannot be in the past.")
         return start_date
 
     def clean(self):
         cleaned = super().clean()
-        duration_type = cleaned.get('duration_type', 'months')
-        duration_months = cleaned.get('duration_months')
-        duration_days = cleaned.get('duration_days')
+        start_date = cleaned.get('start_date')
+        end_date = cleaned.get('end_date')
 
-        if duration_type == 'months':
-            if not duration_months:
-                self.add_error('duration_months', "Please enter the number of months (1–36).")
-            elif duration_months < 1:
-                self.add_error('duration_months', "Duration must be at least 1 month.")
-            elif duration_months > 36:
-                self.add_error('duration_months', "Duration cannot exceed 36 months (3 years).")
-        else:  # days
-            if not duration_days:
-                self.add_error('duration_days', "Please enter the number of days (1–365).")
-            elif duration_days < 1:
-                self.add_error('duration_days', "Duration must be at least 1 day.")
-            elif duration_days > 365:
-                self.add_error('duration_days', "Duration cannot exceed 365 days.")
+        if self.property_obj and not self.property_obj.is_currently_available:
+            self.add_error(None, "This property is currently booked and unavailable for new reservations.")
+
+        if start_date and end_date:
+            if end_date <= start_date:
+                self.add_error('end_date', "Check-out date must be after check-in date.")
+            elif self.property_obj:
+                exclude_id = self.instance.pk if self.instance else None
+                if not self.property_obj.is_available_for_dates(start_date, end_date, exclude_booking_id=exclude_id):
+                    self.add_error(None, "The selected dates are already booked for this property. Please choose different dates.")
 
         return cleaned
 

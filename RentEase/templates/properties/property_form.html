@@ -67,7 +67,7 @@
 
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.25rem;">
         <div class="form-group">
-          <label class="form-label" for="{{ form.rent.id_for_label }}">Monthly Rent (₹) <span class="required">*</span></label>
+          <label class="form-label" for="{{ form.rent.id_for_label }}">Daily Rent (₹) <span class="required">*</span></label>
           {{ form.rent }}
           {% for error in form.rent.errors %}<p class="field-error">⚠ {{ error }}</p>{% endfor %}
         </div>

@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Cashfree Checkout — {{ property.title }} — RentEase{% endblock %}
+
+{% block content %}
+<div class="page-header" style="padding: 2.5rem 0 2rem;">
+  <div class="container">
+    <div class="breadcrumb" style="margin-bottom:0.75rem;">
+      <a href="{% url 'property_list' %}">Properties</a>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <a href="{% url 'property_detail' property.pk %}">{{ property.title|truncatechars:25 }}</a>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <span>Cashfree Payment</span>
+    </div>
+    <h1>Payment Gateway</h1>
+    <p>Complete your booking securely via Cashfree Sandbox Environment.</p>
+  </div>
+</div>
+
+<!-- Cashfree Web Checkout SDK v3 -->
+<script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+
+<div class="container" style="max-width:760px; padding-bottom:5rem;">
+  <div class="form-card" style="box-shadow: 0 20px 40px rgba(0,0,0,0.45); border-color: rgba(197,139,84,0.35);">
+
+    <!-- Top Badge Row -->
+    <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:1.25rem; margin-bottom:1.5rem; flex-wrap:wrap; gap:0.75rem;">
+      <div style="display:flex; align-items:center; gap:0.6rem;">
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg, #c58b54, #e0a96d); color:#000; font-weight:800; font-size:1.1rem;">
+          ₹
+        </span>
+        <div>
+          <div style="font-weight:700; color:#ffffff; font-size:1.05rem;">Cashfree Payments</div>
+          <div style="font-size:0.75rem; color:#94a3b8;">Official PG Test Sandbox</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <span style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; background:rgba(74,222,128,0.12); color:#4ade80; border:1px solid rgba(74,222,128,0.3); border-radius:9999px; padding:3px 10px; font-weight:700;">
+          Instant Confirmation
+        </span>
+        <span style="font-size:0.72rem; text-transform:uppercase; letter-spacing:1px; background:rgba(251,191,36,0.12); color:#fbbf24; border:1px solid rgba(251,191,36,0.3); border-radius:9999px; padding:3px 10px; font-weight:700;">
+          {{ cashfree_mode|upper }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Booking Summary Card -->
+    <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:1.25rem; margin-bottom:1.75rem;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+        <div>
+          <h3 style="font-size:1.15rem; color:#ffffff; font-weight:700; margin-bottom:0.25rem;">{{ property.title }}</h3>
+          <p style="font-size:0.85rem; color:#94a3b8;">📍 {{ property.location }}</p>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.75rem; color:#94a3b8;">Order ID</div>
+          <div style="font-family:monospace; font-size:0.85rem; color:var(--color-primary-light); font-weight:600;">
+            {{ order_id }}
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:0.85rem; border-top:1px solid rgba(255,255,255,0.06); padding-top:1rem; font-size:0.85rem;">
+        <div>
+          <span style="color:#64748b; font-size:0.75rem; display:block;">Guest Name</span>
+          <strong style="color:#cbd5e1;">{{ booking.get_tenant_display_name }}</strong>
+        </div>
+        <div>
+          <span style="color:#64748b; font-size:0.75rem; display:block;">Phone</span>
+          <strong style="color:#cbd5e1;">{{ booking.tenant_contact }}</strong>
+        </div>
+        <div>
+          <span style="color:#64748b; font-size:0.75rem; display:block;">Check-in / Check-out</span>
+          <strong style="color:#cbd5e1;">{{ booking.start_date|date:"d M" }} – {{ booking.end_date|date:"d M Y" }}</strong>
+        </div>
+        <div>
+          <span style="color:#64748b; font-size:0.75rem; display:block;">Stay Duration</span>
+          <strong style="color:#cbd5e1;">{{ booking.duration_display }}</strong>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.25rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.08);">
+        <div>
+          <div style="font-size:0.78rem; color:#94a3b8;">Total Payable Amount</div>
+          <div style="font-size:0.72rem; color:#64748b;">(Includes all taxes &amp; charges)</div>
+        </div>
+        <div style="font-family:'Outfit',sans-serif; font-size:2.2rem; font-weight:800; color:var(--color-primary-light);">
+          ₹{{ booking.payment_amount|floatformat:0 }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Loader / Status -->
+    <div id="checkoutLoader" style="text-align:center; padding:1.75rem 1rem;">
+      <div style="display:inline-block; width:44px; height:44px; border:3px solid rgba(197,139,84,0.25); border-top-color:var(--color-primary-light); border-radius:50%; animation:cfSpin 0.9s linear infinite; margin-bottom:1rem;"></div>
+      <h3 style="font-size:1.1rem; color:#ffffff; font-weight:600; margin-bottom:0.4rem;">
+        Redirecting to Cashfree Sandbox Checkout...
+      </h3>
+      <p style="font-size:0.85rem; color:#94a3b8; max-width:480px; margin:0 auto;">
+        Launching Cashfree's secure test environment where you can test payments via UPI (e.g. <code>success@upi</code>), Test Cards, or Netbanking.
+      </p>
+    </div>
+
+    <!-- Fallback / Manual Trigger Section -->
+    <div id="checkoutFallback" style="text-align:center; display:none; padding:1rem 0;">
+      <div style="margin-bottom:1.5rem;">
+        <button type="button" id="btnOpenCashfree" class="btn btn-primary btn-lg" style="width:100%; justify-content:center; font-size:1.05rem; padding:1rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+          Open Cashfree Gateway Now
+        </button>
+      </div>
+
+      <p style="font-size:0.8rem; color:#64748b; margin-bottom:1.25rem;">
+        If popup was blocked or browser did not redirect automatically, click the button above.
+      </p>
+    </div>
+
+    <!-- Sandbox Testing Simulator Box -->
+    <div style="margin-top:1.5rem; background:rgba(197,139,84,0.06); border:1px dashed rgba(197,139,84,0.4); border-radius:12px; padding:1.25rem;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem; flex-wrap:wrap; gap:0.5rem;">
+        <div style="display:flex; align-items:center; gap:0.4rem;">
+          <span style="color:var(--color-primary-light); font-size:1.1rem;">⚡</span>
+          <span style="font-size:0.88rem; font-weight:700; color:#ffffff;">Cashfree Sandbox Testing Helper</span>
+        </div>
+        <span style="font-size:0.72rem; color:#cbd5e1; background:rgba(0,0,0,0.3); padding:2px 8px; border-radius:4px;">
+          Test Mode
+        </span>
+      </div>
+      <p style="font-size:0.8rem; color:#94a3b8; line-height:1.5; margin-bottom:1rem;">
+        In the Cashfree sandbox, you can complete the payment in the official Cashfree modal, or click the quick simulation button below to instantly test the end-to-end auto-approval and confirmation workflow.
+      </p>
+      <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <a href="{% url 'simulate_payment' booking.pk %}" class="btn btn-outline" style="flex:1; justify-content:center; color:#4ade80; border-color:#4ade80; font-size:0.85rem; padding:0.7rem;">
+          ✓ Simulate Successful Payment (Instant Confirm)
+        </a>
+        <a href="{% url 'my_bookings' %}" class="btn btn-ghost" style="font-size:0.85rem;">
+          Cancel
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+@keyframes cfSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const mode = "{{ cashfree_mode|default:'sandbox' }}";
+    const sessionId = "{{ payment_session_id|escapejs }}";
+    const loader = document.getElementById('checkoutLoader');
+    const fallback = document.getElementById('checkoutFallback');
+
+    function showFallback() {
+      if (loader) loader.style.display = 'none';
+      if (fallback) fallback.style.display = 'block';
+    }
+
+    function launchCheckout() {
+      if (typeof Cashfree !== 'undefined' && sessionId && !sessionId.startsWith('session_mock_')) {
+        try {
+          const cashfree = Cashfree({ mode: mode });
+          cashfree.checkout({
+            paymentSessionId: sessionId,
+            redirectTarget: "_self"
+          });
+        } catch (err) {
+          console.warn("Cashfree checkout redirection error:", err);
+          showFallback();
+        }
+      } else {
+        // Mock or SDK unavailable
+        showFallback();
+      }
+    }
+
+    const openBtn = document.getElementById('btnOpenCashfree');
+    if (openBtn) {
+      openBtn.addEventListener('click', launchCheckout);
+    }
+
+    // Launch immediately
+    launchCheckout();
+
+    // If still on page after 2s, reveal fallback options
+    setTimeout(showFallback, 2000);
+  });
+</script>
+{% endblock %}

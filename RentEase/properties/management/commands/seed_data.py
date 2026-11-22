@@ -30,7 +30,7 @@ SAMPLE_PROPERTIES = [
             'Ideal for families or working professionals.'
         ),
         'location': 'Sector 17, Chandigarh',
-        'rent': 35000,
+        'rent': 2500,
         'property_type': 'apartment',
         'bedrooms': 3,
         'bathrooms': 2,
@@ -45,7 +45,7 @@ SAMPLE_PROPERTIES = [
             'Located just 2 km from Lovely Professional University campus.'
         ),
         'location': 'GT Road, Phagwara',
-        'rent': 8500,
+        'rent': 950,
         'property_type': 'studio',
         'bedrooms': 0,
         'bathrooms': 1,
@@ -60,7 +60,7 @@ SAMPLE_PROPERTIES = [
             'Close to schools, hospitals, and the railway station.'
         ),
         'location': 'Cantt Area, Jalandhar',
-        'rent': 15000,
+        'rent': 1600,
         'property_type': 'apartment',
         'bedrooms': 2,
         'bathrooms': 2,
@@ -75,7 +75,7 @@ SAMPLE_PROPERTIES = [
             'Amenities include housekeeping, laundry, WiFi, and a common lounge area.'
         ),
         'location': 'Laxmi Nagar, Delhi',
-        'rent': 12000,
+        'rent': 750,
         'property_type': 'pg',
         'bedrooms': 1,
         'bathrooms': 1,
@@ -91,7 +91,7 @@ SAMPLE_PROPERTIES = [
             'Perfect for large families.'
         ),
         'location': 'Vasant Kunj, Delhi',
-        'rent': 85000,
+        'rent': 6500,
         'property_type': 'house',
         'bedrooms': 4,
         'bathrooms': 3,
@@ -106,7 +106,7 @@ SAMPLE_PROPERTIES = [
             'distance from cafes, restaurants, and co-working spaces.'
         ),
         'location': 'Koramangala, Bengaluru',
-        'rent': 22000,
+        'rent': 1400,
         'property_type': 'studio',
         'bedrooms': 0,
         'bathrooms': 1,
@@ -121,7 +121,7 @@ SAMPLE_PROPERTIES = [
             'fully-equipped clubhouse. The apartment is tastefully furnished and ready to move in.'
         ),
         'location': 'Whitefield, Bengaluru',
-        'rent': 55000,
+        'rent': 3200,
         'property_type': 'apartment',
         'bedrooms': 3,
         'bathrooms': 3,
@@ -136,7 +136,7 @@ SAMPLE_PROPERTIES = [
             'kitchen, regular water supply, and a parking spot.'
         ),
         'location': 'Hinjewadi, Pune',
-        'rent': 14000,
+        'rent': 1100,
         'property_type': 'apartment',
         'bedrooms': 1,
         'bathrooms': 1,
@@ -151,7 +151,7 @@ SAMPLE_PROPERTIES = [
             'and a private borewell. The farmhouse has 5 bedrooms and can accommodate up to 12 guests.'
         ),
         'location': 'Mulshi, Pune',
-        'rent': 75000,
+        'rent': 5000,
         'property_type': 'farmhouse',
         'bedrooms': 5,
         'bathrooms': 4,
@@ -166,7 +166,7 @@ SAMPLE_PROPERTIES = [
             'Located in a busy market area with high foot traffic.'
         ),
         'location': 'Sector 22, Chandigarh',
-        'rent': 45000,
+        'rent': 2800,
         'property_type': 'commercial',
         'bedrooms': 0,
         'bathrooms': 1,
@@ -244,22 +244,31 @@ class Command(BaseCommand):
 
         # --- Create sample bookings for user ---
         booking_data = [
-            (created_properties[0], user, date.today() + timedelta(days=15), 6,
-             'Looking forward to moving in!', 'approved'),
-            (created_properties[2], user, date.today() + timedelta(days=30), 12,
-             'Will be moving with family next month.', 'pending'),
-            (created_properties[6], user, date.today() + timedelta(days=7), 3,
+            (created_properties[0], user, date.today() + timedelta(days=15), date.today() + timedelta(days=18), 3,
+             'Looking forward to staying!', 'approved'),
+            (created_properties[2], user, date.today() + timedelta(days=30), date.today() + timedelta(days=35), 5,
+             'Visiting with family next month.', 'pending'),
+            (created_properties[6], user, date.today() + timedelta(days=7), date.today() + timedelta(days=10), 3,
              'Need short-term corporate stay near clubhouse.', 'pending'),
         ]
-        for prop, ten, start, duration, msg, status in booking_data:
+        for prop, ten, start, end, days, msg, status in booking_data:
+            payment_status = 'PAID' if status == 'approved' else 'PENDING'
             booking, created = Booking.objects.get_or_create(
                 property=prop,
                 tenant=ten,
                 defaults={
                     'start_date': start,
-                    'duration_months': duration,
+                    'end_date': end,
+                    'total_days': days,
+                    'guests': 2,
+                    'tenant_full_name': 'Aarav Patel',
+                    'tenant_contact': '+91 98765 43210',
                     'message': msg,
                     'status': status,
+                    'payment_status': payment_status,
+                    'payment_method': 'UPI (Cashfree Sandbox)' if payment_status == 'PAID' else None,
+                    'order_id': f'order_seed_{prop.id}',
+                    'cf_payment_id': f'cf_seed_pay_{prop.id}' if payment_status == 'PAID' else None,
                 }
             )
             if created:

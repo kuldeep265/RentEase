@@ -263,21 +263,108 @@ class BookingTest(TestCase):
         self.tenant = make_tenant()
         self.prop = make_property(self.owner)
         self.future_date = (date.today() + timedelta(days=15)).isoformat()
+        self.future_end_date = (date.today() + timedelta(days=18)).isoformat()
 
     def test_tenant_can_submit_booking(self):
-        """A valid booking request is saved to the database."""
+        """A valid daily booking request is saved and redirects to Cashfree checkout."""
         self.client.login(username='testtenant', password='TestPass@123')
         response = self.client.post(
             reverse('book_property', args=[self.prop.pk]),
             {
+                'tenant_full_name': 'Test Tenant',
+                'tenant_contact': '+919876543210',
                 'start_date': self.future_date,
-                'duration_months': 6,
+                'end_date': self.future_end_date,
+                'guests': 2,
                 'message': 'Hello owner!',
             }
         )
         self.assertTrue(
             Booking.objects.filter(tenant=self.tenant, property=self.prop).exists()
         )
+        booking = Booking.objects.get(tenant=self.tenant, property=self.prop)
+        self.assertEqual(booking.total_days, 3)
+        self.assertEqual(booking.payment_amount, round(self.prop.rent * 3, 2))
+        self.assertEqual(booking.payment_status, 'PENDING')
+        self.assertTrue(bool(booking.order_id))
+        self.assertRedirects(response, reverse('cashfree_checkout', args=[booking.pk]))
+
+    def test_cashfree_checkout_renders_correctly(self):
+        """Cashfree checkout page loads for the tenant with session and SDK info."""
+        booking = Booking.objects.create(
+            property=self.prop,
+            tenant=self.tenant,
+            start_date=date.today() + timedelta(days=10),
+            end_date=date.today() + timedelta(days=13),
+            tenant_contact='9876543210',
+            order_id='order_test_123',
+            payment_session_id='session_mock_123',
+            payment_status='PENDING',
+        )
+        self.client.login(username='testtenant', password='TestPass@123')
+        response = self.client.get(reverse('cashfree_checkout', args=[booking.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Cashfree Payments')
+        self.assertContains(response, 'order_test_123')
+
+    def test_payment_callback_auto_approves_booking(self):
+        """Cashfree callback automatically approves the booking without manual owner action."""
+        booking = Booking.objects.create(
+            property=self.prop,
+            tenant=self.tenant,
+            start_date=date.today() + timedelta(days=10),
+            end_date=date.today() + timedelta(days=13),
+            tenant_contact='9876543210',
+            order_id='order_test_auto_approve',
+            payment_session_id='session_mock_auto',
+            payment_status='PENDING',
+            status='pending',
+        )
+        self.client.login(username='testtenant', password='TestPass@123')
+        response = self.client.get(
+            reverse('payment_callback') + f'?order_id={booking.order_id}'
+        )
+        self.assertRedirects(response, reverse('my_bookings'))
+        booking.refresh_from_db()
+        # Booking must be auto-approved and paid
+        self.assertEqual(booking.payment_status, 'PAID')
+        self.assertEqual(booking.status, 'approved')
+        self.assertTrue(booking.is_paid)
+
+    def test_simulate_payment_auto_confirms(self):
+        """Simulate payment view instantly marks booking as paid and approved."""
+        booking = Booking.objects.create(
+            property=self.prop,
+            tenant=self.tenant,
+            start_date=date.today() + timedelta(days=10),
+            end_date=date.today() + timedelta(days=13),
+            tenant_contact='9876543210',
+            order_id='order_test_sim',
+            payment_status='PENDING',
+            status='pending',
+        )
+        self.client.login(username='testtenant', password='TestPass@123')
+        response = self.client.get(reverse('simulate_payment', args=[booking.pk]))
+        self.assertRedirects(response, reverse('my_bookings'))
+        booking.refresh_from_db()
+        self.assertEqual(booking.payment_status, 'PAID')
+        self.assertEqual(booking.status, 'approved')
+
+    def test_manual_manage_booking_redirects(self):
+        """Manual approve/reject is removed — manage_booking redirects with info."""
+        booking = Booking.objects.create(
+            property=self.prop,
+            tenant=self.tenant,
+            start_date=date.today() + timedelta(days=10),
+            end_date=date.today() + timedelta(days=15),
+            status='pending',
+        )
+        self.client.login(username='testowner', password='TestPass@123')
+        response = self.client.post(
+            reverse('manage_booking', args=[booking.pk]),
+            {'action': 'approve'}
+        )
+        self.assertRedirects(response, reverse('owner_dashboard'))
 
     def test_owner_cannot_book_own_property(self):
         """An owner booking their own property must be rejected."""
@@ -285,8 +372,11 @@ class BookingTest(TestCase):
         self.client.post(
             reverse('book_property', args=[self.prop.pk]),
             {
+                'tenant_full_name': 'Test Owner',
+                'tenant_contact': '+919876543210',
                 'start_date': self.future_date,
-                'duration_months': 3,
+                'end_date': self.future_end_date,
+                'guests': 1,
             }
         )
         # No booking should be created
@@ -295,14 +385,37 @@ class BookingTest(TestCase):
         )
 
     def test_past_date_rejected(self):
-        """A booking with a past start date must be rejected."""
+        """A booking with a past check-in date must be rejected."""
         self.client.login(username='testtenant', password='TestPass@123')
         past_date = (date.today() - timedelta(days=5)).isoformat()
+        past_end = (date.today() - timedelta(days=2)).isoformat()
         response = self.client.post(
             reverse('book_property', args=[self.prop.pk]),
             {
+                'tenant_full_name': 'Test Tenant',
+                'tenant_contact': '+919876543210',
                 'start_date': past_date,
-                'duration_months': 3,
+                'end_date': past_end,
+                'guests': 1,
+            }
+        )
+        self.assertFalse(
+            Booking.objects.filter(tenant=self.tenant, property=self.prop).exists()
+        )
+
+    def test_checkout_before_checkin_rejected(self):
+        """A booking where check-out is before or equal to check-in must be rejected."""
+        self.client.login(username='testtenant', password='TestPass@123')
+        cin = (date.today() + timedelta(days=10)).isoformat()
+        cout = (date.today() + timedelta(days=9)).isoformat()
+        response = self.client.post(
+            reverse('book_property', args=[self.prop.pk]),
+            {
+                'tenant_full_name': 'Test Tenant',
+                'tenant_contact': '+919876543210',
+                'start_date': cin,
+                'end_date': cout,
+                'guests': 1,
             }
         )
         self.assertFalse(
@@ -315,7 +428,7 @@ class BookingTest(TestCase):
         Booking.objects.create(
             property=self.prop, tenant=other_tenant,
             start_date=date.today() + timedelta(days=10),
-            duration_months=2,
+            end_date=date.today() + timedelta(days=14),
         )
         self.client.login(username='testtenant', password='TestPass@123')
         response = self.client.get(reverse('my_bookings'))
@@ -330,47 +443,64 @@ class BookingTest(TestCase):
         self.client.post(
             reverse('book_property', args=[unavailable.pk]),
             {
+                'tenant_full_name': 'Test Tenant',
+                'tenant_contact': '+919876543210',
                 'start_date': self.future_date,
-                'duration_months': 2,
+                'end_date': self.future_end_date,
+                'guests': 1,
             }
         )
         self.assertFalse(
             Booking.objects.filter(tenant=self.tenant, property=unavailable).exists()
         )
 
-    def test_owner_can_approve_booking(self):
-        """Owner can approve a pending booking via POST."""
-        booking = Booking.objects.create(
+
+
+    def test_date_conflict_prevents_double_booking(self):
+        """Submitting a booking request for dates that overlap with an approved booking is rejected."""
+        # Approved booking from day 10 to day 15
+        Booking.objects.create(
             property=self.prop,
             tenant=self.tenant,
             start_date=date.today() + timedelta(days=10),
-            duration_months=3,
+            end_date=date.today() + timedelta(days=15),
+            status='approved',
+        )
+        other_tenant = make_tenant(username='othertenant2')
+        self.client.login(username='othertenant2', password='TestPass@123')
+
+        # Overlapping request: day 12 to day 17
+        cin = (date.today() + timedelta(days=12)).isoformat()
+        cout = (date.today() + timedelta(days=17)).isoformat()
+        response = self.client.post(
+            reverse('book_property', args=[self.prop.pk]),
+            {
+                'tenant_full_name': 'Other Tenant',
+                'tenant_contact': '+919876543211',
+                'start_date': cin,
+                'end_date': cout,
+                'guests': 1,
+            }
+        )
+        # Booking should NOT be created due to conflict
+        self.assertFalse(
+            Booking.objects.filter(tenant=other_tenant, property=self.prop).exists()
+        )
+
+    def test_owner_checkout_marks_completed(self):
+        """When owner checks out an approved booking, status is set to 'completed'."""
+        booking = Booking.objects.create(
+            property=self.prop,
+            tenant=self.tenant,
+            start_date=date.today() - timedelta(days=3),
+            end_date=date.today(),
+            status='approved',
         )
         self.client.login(username='testowner', password='TestPass@123')
-        self.client.post(
-            reverse('manage_booking', args=[booking.pk]),
-            {'action': 'approve'}
-        )
+        self.client.post(reverse('checkout_booking', args=[booking.pk]))
         booking.refresh_from_db()
-        self.assertEqual(booking.status, 'approved')
-
-    def test_other_owner_cannot_manage_booking(self):
-        """A different owner cannot approve/reject another owner's booking."""
-        other_owner = make_owner(username='stranger_owner')
-        booking = Booking.objects.create(
-            property=self.prop,
-            tenant=self.tenant,
-            start_date=date.today() + timedelta(days=10),
-            duration_months=3,
-        )
-        self.client.login(username='stranger_owner', password='TestPass@123')
-        self.client.post(
-            reverse('manage_booking', args=[booking.pk]),
-            {'action': 'approve'}
-        )
-        booking.refresh_from_db()
-        # Status should remain 'pending' — unauthorized change rejected
-        self.assertEqual(booking.status, 'pending')
+        self.assertTrue(booking.checked_out)
+        self.assertEqual(booking.status, 'completed')
 
     def test_tenant_can_cancel_pending_booking(self):
         """Tenant can cancel their own pending booking."""
@@ -378,26 +508,103 @@ class BookingTest(TestCase):
             property=self.prop,
             tenant=self.tenant,
             start_date=date.today() + timedelta(days=10),
-            duration_months=3,
+            end_date=date.today() + timedelta(days=13),
         )
         self.client.login(username='testtenant', password='TestPass@123')
         self.client.post(reverse('cancel_booking', args=[booking.pk]))
         booking.refresh_from_db()
         self.assertEqual(booking.status, 'cancelled')
 
-    def test_form_validation_duration_zero_rejected(self):
-        """Duration of 0 months must be rejected by the form."""
+    def test_booked_property_shows_not_available_on_cards_and_cannot_be_booked(self):
+        """
+        When a property has an approved active booking:
+        1. prop.is_booked is True, prop.is_currently_available is False.
+        2. Property card on home page and listing page shows 'Not Available' badge.
+        3. Property detail page shows 'Currently Booked' and disables booking form.
+        4. Attempting to book via POST is rejected and redirects with error message.
+        """
+        # Initially available
+        self.assertTrue(self.prop.is_currently_available)
+        self.assertFalse(self.prop.is_booked)
+
+        # Create an approved booking
+        booking = Booking.objects.create(
+            property=self.prop,
+            tenant=self.tenant,
+            start_date=date.today() + timedelta(days=1),
+            end_date=date.today() + timedelta(days=4),
+            status='approved',
+            payment_status='PAID',
+            checked_out=False,
+        )
+
+        # Property is now booked
+        self.assertTrue(self.prop.is_booked)
+        self.assertFalse(self.prop.is_currently_available)
+
+        # 1. Check homepage property card badge
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Not Available')
+
+        # 2. Check property list page card badge
+        response = self.client.get(reverse('property_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Not Available')
+
+        # 3. Check property detail page displays Currently Booked status
         self.client.login(username='testtenant', password='TestPass@123')
-        response = self.client.post(
+        response = self.client.get(reverse('property_detail', args=[self.prop.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Currently Booked')
+        self.assertContains(response, 'Currently Booked — Unavailable')
+
+        # 4. Attempting to submit a new booking on this booked property must fail
+        another_tenant = make_tenant(username='secondtenant')
+        self.client.login(username='secondtenant', password='TestPass@123')
+        post_response = self.client.post(
             reverse('book_property', args=[self.prop.pk]),
             {
-                'start_date': self.future_date,
-                'duration_months': 0,
-            }
+                'tenant_full_name': 'Second Guest',
+                'tenant_contact': '+919123456789',
+                'start_date': (date.today() + timedelta(days=2)).isoformat(),
+                'end_date': (date.today() + timedelta(days=5)).isoformat(),
+                'guests': 1,
+            },
+            follow=True
         )
-        self.assertFalse(
-            Booking.objects.filter(tenant=self.tenant, property=self.prop).exists()
+        # Must be rejected with error and not create a booking
+        self.assertEqual(Booking.objects.filter(tenant=another_tenant).count(), 0)
+        self.assertContains(post_response, 'currently booked and unavailable for new reservations')
+
+    def test_checkout_restores_available_status(self):
+        """When owner checks out the booking, the property returns to Available."""
+        booking = Booking.objects.create(
+            property=self.prop,
+            tenant=self.tenant,
+            start_date=date.today() - timedelta(days=2),
+            end_date=date.today() + timedelta(days=1),
+            status='approved',
+            payment_status='PAID',
+            checked_out=False,
         )
+        self.assertTrue(self.prop.is_booked)
+        self.assertFalse(self.prop.is_currently_available)
+
+        # Owner performs checkout
+        self.client.login(username='testowner', password='TestPass@123')
+        self.client.post(reverse('checkout_booking', args=[booking.pk]))
+        booking.refresh_from_db()
+        self.assertTrue(booking.checked_out)
+        self.assertEqual(booking.status, 'completed')
+
+        # Property is restored to Available
+        self.assertFalse(self.prop.is_booked)
+        self.assertTrue(self.prop.is_currently_available)
+
+        # Property card on homepage now shows Available
+        response = self.client.get(reverse('home'))
+        self.assertContains(response, 'Available')
 
 
 # =========================================================================== #

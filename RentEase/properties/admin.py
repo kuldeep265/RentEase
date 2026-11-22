@@ -49,21 +49,25 @@ class PropertyAdmin(admin.ModelAdmin):
 class BookingAdmin(admin.ModelAdmin):
     list_display = [
         'id', 'property', 'tenant', 'start_date',
-        'duration_months', 'status', 'created_at'
+        'end_date', 'total_days', 'payment_amount', 'payment_status', 'status', 'created_at'
     ]
-    list_filter = ['status', 'created_at', 'start_date']
+    list_filter = ['payment_status', 'status', 'created_at', 'start_date']
     search_fields = [
         'property__title', 'tenant__username',
-        'tenant__email', 'tenant__first_name'
+        'tenant__email', 'tenant__first_name', 'tenant_full_name',
+        'order_id', 'cf_order_id', 'cf_payment_id'
     ]
-    readonly_fields = ['created_at']
+    readonly_fields = ['created_at', 'paid_at']
 
     fieldsets = [
         ('Booking Details', {
-            'fields': ['property', 'tenant', 'start_date', 'duration_months', 'message']
+            'fields': ['property', 'tenant', 'start_date', 'end_date', 'total_days', 'guests', 'payment_amount', 'tenant_full_name', 'tenant_contact', 'message']
         }),
-        ('Status', {
-            'fields': ['status']
+        ('Cashfree Payment Gateway', {
+            'fields': ['payment_status', 'order_id', 'cf_order_id', 'payment_session_id', 'cf_payment_id', 'payment_method', 'paid_at']
+        }),
+        ('Status & Checkout', {
+            'fields': ['status', 'checked_out', 'checkout_date']
         }),
         ('Timestamps', {
             'fields': ['created_at'],

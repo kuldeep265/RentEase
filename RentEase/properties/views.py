@@ -16,13 +16,24 @@ from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.core.paginator import Paginator
+from django.utils import timezone
+from datetime import date, datetime, timedelta
+from decimal import Decimal
+import time
 
 from .models import Property, Booking, Review
 from .forms import (
     RegisterForm, LoginForm,
     PropertyForm, BookingForm, ContactForm, ReviewForm
+)
+from .cashfree_service import (
+    create_cashfree_order,
+    verify_cashfree_order,
+    get_cashfree_sdk_mode,
+    get_cashfree_checkout_url,
+    is_cashfree_configured,
 )
 
 
@@ -81,6 +92,7 @@ def property_list(request):
     """
     Shows all available properties with optional filters.
     Filters are applied via GET parameters to keep URLs bookmarkable.
+    Supports filtering by location, max daily rent, type, bedrooms, and stay dates.
     """
     properties = Property.objects.filter(is_available=True)
 
@@ -89,6 +101,8 @@ def property_list(request):
     max_rent = request.GET.get('max_rent', '').strip()
     property_type = request.GET.get('property_type', '').strip()
     min_bedrooms = request.GET.get('min_bedrooms', '').strip()
+    check_in = request.GET.get('check_in', '').strip()
+    check_out = request.GET.get('check_out', '').strip()
 
     if location:
         properties = properties.filter(location__icontains=location)
@@ -108,6 +122,17 @@ def property_list(request):
         except ValueError:
             pass
 
+    # Date range availability filter
+    if check_in and check_out:
+        try:
+            cin_date = datetime.strptime(check_in, '%Y-%m-%d').date()
+            cout_date = datetime.strptime(check_out, '%Y-%m-%d').date()
+            if cout_date > cin_date:
+                available_ids = [p.id for p in properties if p.is_available_for_dates(cin_date, cout_date)]
+                properties = properties.filter(id__in=available_ids)
+        except (ValueError, TypeError):
+            pass
+
     total_count = properties.count()
 
     # Pagination — 9 properties per page
@@ -124,16 +149,18 @@ def property_list(request):
         'max_rent': max_rent,
         'property_type': property_type,
         'min_bedrooms': min_bedrooms,
+        'check_in': check_in,
+        'check_out': check_out,
         'property_type_choices': property_type_choices,
         'page_title': 'Explore Properties — RentEase',
-        'has_filters': any([location, max_rent, property_type, min_bedrooms]),
+        'has_filters': any([location, max_rent, property_type, min_bedrooms, check_in, check_out]),
     }
     return render(request, 'properties/property_list.html', context)
 
 
 def property_detail(request, pk):
     """
-    Shows full details of a single property, reviews, and booking form.
+    Shows full details of a single property, reviews, and daily booking form.
     Anonymous users see a 'Login to Book' prompt instead of the form.
     Verified tenants who have booked the property can rate and review.
     """
@@ -168,9 +195,20 @@ def property_detail(request, pk):
             review_form = ReviewForm(instance=user_review)
 
     form = None
-    # Show booking form only to authenticated non-owners
-    if request.user.is_authenticated and request.user != property_obj.owner:
-        form = BookingForm()
+    default_check_in = timezone.now().date() + timedelta(days=1)
+    default_check_out = timezone.now().date() + timedelta(days=3)
+
+    # Show booking form only to authenticated non-owners when property is available
+    if request.user.is_authenticated and request.user != property_obj.owner and property_obj.is_currently_available:
+        form = BookingForm(
+            property_obj=property_obj,
+            initial={
+                'tenant_full_name': request.user.get_full_name() or request.user.username,
+                'start_date': default_check_in,
+                'end_date': default_check_out,
+                'guests': 1,
+            }
+        )
 
     reviews = property_obj.reviews.select_related('tenant').all()
 
@@ -178,6 +216,8 @@ def property_detail(request, pk):
         'property': property_obj,
         'amenities': property_obj.get_amenities_list(),
         'form': form,
+        'default_check_in': default_check_in.strftime('%Y-%m-%d'),
+        'default_check_out': default_check_out.strftime('%Y-%m-%d'),
         'existing_booking': existing_booking,
         'has_booked': has_booked,
         'can_review': can_review,
@@ -319,10 +359,10 @@ def logout_view(request):
 @login_required
 def book_property(request, pk):
     """
-    Submit a booking request for a property.
-    Validates: not own property, property available, no duplicate active booking.
-    Collects tenant contact info, duration (months or days), payment amount,
-    and renders a UPI QR code for payment before submission.
+    Submit a daily booking request for a property.
+    Validates: not own property, property available, dates availability.
+    Collects tenant contact, check-in, check-out dates, guest count,
+    and displays dynamic UPI QR code with live calculated amount.
     """
     property_obj = get_object_or_404(Property, pk=pk)
 
@@ -331,79 +371,258 @@ def book_property(request, pk):
         messages.error(request, "You cannot book your own property.")
         return redirect('property_detail', pk=pk)
 
-    # Property must be available
-    if not property_obj.is_available:
-        messages.error(request, "This property is currently not available for booking.")
-        return redirect('property_detail', pk=pk)
-
-    # Prevent duplicate pending/approved bookings
-    existing = Booking.objects.filter(
-        property=property_obj,
-        tenant=request.user,
-        status__in=['pending', 'approved']
-    ).exists()
-    if existing:
-        messages.warning(
-            request,
-            "You already have a pending or approved booking for this property."
-        )
+    # Property must be available and not currently booked
+    if not property_obj.is_currently_available:
+        messages.error(request, "This property is currently booked and unavailable for new reservations.")
         return redirect('property_detail', pk=pk)
 
     # Build UPI QR string for the owner
-    # Format: upi://pay?pa=<vpa>&pn=<name>&am=<amount>&cu=INR&tn=<note>
-    # We use the owner's email as UPI VPA placeholder (owner can update it)
     owner_name = property_obj.owner.get_full_name() or property_obj.owner.username
-    owner_upi  = property_obj.owner.email or f"{property_obj.owner.username}@upi"
-    rent       = float(property_obj.rent)
-    # Daily rate = monthly rent / 30
-    daily_rate = round(rent / 30, 2)
+    owner_upi = property_obj.owner.email or f"{property_obj.owner.username}@upi"
+    daily_rate = float(property_obj.rent)
+
+    cin = None
+    cout = None
 
     if request.method == 'POST':
-        form = BookingForm(request.POST)
+        form = BookingForm(request.POST, property_obj=property_obj)
         if form.is_valid():
             booking = form.save(commit=False)
             booking.property = property_obj
-            booking.tenant   = request.user
-            booking.status   = 'pending'
+            booking.tenant = request.user
+            booking.status = 'pending'
+            booking.payment_status = 'PENDING'
             if not booking.tenant_full_name:
                 booking.tenant_full_name = request.user.get_full_name() or request.user.username
-
-            # Compute and enforce payment_amount server-side
-            dtype = form.cleaned_data['duration_type']
-            if dtype == 'months':
-                months = form.cleaned_data.get('duration_months') or 1
-                computed = round(rent * months, 2)
-            else:
-                days = form.cleaned_data.get('duration_days') or 1
-                computed = round(daily_rate * days, 2)
-
-            booking.payment_amount = max(computed, 1000)
             booking.save()
 
-            messages.success(
-                request,
-                f"Booking request sent for '{property_obj.title}'! "
-                "The owner will review it shortly."
-            )
-            return redirect('my_bookings')
+            # Create Cashfree Payment Order
+            return_url = request.build_absolute_uri(reverse('payment_callback')) + "?order_id={order_id}"
+            cf_result = create_cashfree_order(booking, return_url)
+
+            if cf_result.get('success'):
+                booking.order_id = cf_result.get('order_id')
+                booking.cf_order_id = cf_result.get('cf_order_id')
+                booking.payment_session_id = cf_result.get('payment_session_id')
+                booking.save()
+
+                # Seamless direct redirect to Cashfree checkout without intermediate page
+                if not cf_result.get('is_mock'):
+                    checkout_url = get_cashfree_checkout_url()
+                    return render(request, 'bookings/cashfree_direct_redirect.html', {
+                        'checkout_url': checkout_url,
+                        'payment_session_id': booking.payment_session_id,
+                    })
+                return redirect('cashfree_checkout', booking_id=booking.pk)
+            else:
+                messages.error(
+                    request,
+                    f"Unable to initialize Cashfree payment gateway: {cf_result.get('error', 'Unknown error')}."
+                )
+                return redirect('book_property', pk=pk)
         else:
             messages.error(request, "Please correct the form errors.")
+            raw_s = request.POST.get('start_date')
+            raw_e = request.POST.get('end_date')
+            if raw_s:
+                try: cin = datetime.strptime(raw_s, '%Y-%m-%d').date()
+                except (ValueError, TypeError): pass
+            if raw_e:
+                try: cout = datetime.strptime(raw_e, '%Y-%m-%d').date()
+                except (ValueError, TypeError): pass
     else:
+        req_start = request.GET.get('start_date')
+        req_end = request.GET.get('end_date')
+        req_guests = request.GET.get('guests', '1')
+
+        if req_start and req_end:
+            try:
+                cin = datetime.strptime(req_start, '%Y-%m-%d').date()
+                cout = datetime.strptime(req_end, '%Y-%m-%d').date()
+            except (ValueError, TypeError):
+                cin = None
+                cout = None
+
+        if not cin or not cout or cout <= cin:
+            cin = timezone.now().date() + timedelta(days=1)
+            cout = timezone.now().date() + timedelta(days=3)
+
+        try:
+            guests_val = max(1, int(req_guests))
+        except (ValueError, TypeError):
+            guests_val = 1
+
         initial = {
             'tenant_full_name': request.user.get_full_name() or request.user.username,
-            'duration_type': 'months',
+            'start_date': cin,
+            'end_date': cout,
+            'guests': guests_val,
         }
-        form = BookingForm(initial=initial)
+        form = BookingForm(property_obj=property_obj, initial=initial)
+
+    if cin and cout and cout > cin:
+        initial_days = (cout - cin).days
+    else:
+        initial_days = 2
+    initial_amount = round(daily_rate * initial_days, 2)
 
     return render(request, 'bookings/book_property.html', {
         'form': form,
         'property': property_obj,
         'owner_upi': owner_upi,
         'owner_name': owner_name,
-        'monthly_rent': rent,
         'daily_rate': daily_rate,
+        'initial_days': initial_days,
+        'initial_amount': initial_amount,
         'page_title': f"Book {property_obj.title} — RentEase",
     })
+
+
+@login_required
+def cashfree_checkout(request, booking_id):
+    """
+    Renders the Cashfree Sandbox checkout page with Cashfree JS SDK v3.
+    Loads the payment session and redirects/opens Cashfree sandbox checkout.
+    """
+    booking = get_object_or_404(Booking, pk=booking_id, tenant=request.user)
+
+    if booking.payment_status == 'PAID':
+        messages.info(request, "This booking has already been paid and confirmed.")
+        return redirect('my_bookings')
+
+    # Ensure an order and session exist
+    if not booking.payment_session_id or not booking.order_id:
+        return_url = request.build_absolute_uri(reverse('payment_callback')) + "?order_id={order_id}"
+        cf_result = create_cashfree_order(booking, return_url=return_url)
+        if cf_result.get('success'):
+            booking.order_id = cf_result.get('order_id')
+            booking.cf_order_id = cf_result.get('cf_order_id')
+            booking.payment_session_id = cf_result.get('payment_session_id')
+            booking.save()
+        else:
+            messages.error(request, f"Could not create Cashfree payment session: {cf_result.get('error')}")
+            return redirect('my_bookings')
+
+    # Seamless direct auto-post to Cashfree without intermediate page
+    if not booking.payment_session_id.startswith('session_mock_'):
+        checkout_url = get_cashfree_checkout_url()
+        return render(request, 'bookings/cashfree_direct_redirect.html', {
+            'checkout_url': checkout_url,
+            'payment_session_id': booking.payment_session_id,
+        })
+
+    callback_url = request.build_absolute_uri(reverse('payment_callback')) + f"?order_id={booking.order_id}"
+
+    return render(request, 'bookings/cashfree_checkout.html', {
+        'booking': booking,
+        'property': booking.property,
+        'payment_session_id': booking.payment_session_id,
+        'order_id': booking.order_id,
+        'cashfree_mode': get_cashfree_sdk_mode(),
+        'callback_url': callback_url,
+        'is_configured': is_cashfree_configured(),
+        'page_title': f"Cashfree Checkout — {booking.property.title}",
+    })
+
+
+@login_required
+def payment_callback(request):
+    """
+    Handles redirect return from Cashfree PG with ?order_id={order_id}.
+    Verifies payment with Cashfree API and auto-confirms the booking (removes manual approval).
+    """
+    order_id = request.GET.get('order_id')
+    if not order_id:
+        messages.error(request, "Payment callback received without order reference.")
+        return redirect('my_bookings')
+
+    booking = Booking.objects.filter(order_id=order_id).select_related('property', 'tenant').first()
+    if not booking:
+        messages.error(request, f"Booking with Order ID '{order_id}' was not found.")
+        return redirect('my_bookings')
+
+    # Access control
+    if booking.tenant != request.user and booking.property.owner != request.user:
+        messages.error(request, "You are not authorized to view this booking.")
+        return redirect('my_bookings')
+
+    # If already marked as paid
+    if booking.payment_status == 'PAID':
+        messages.success(request, f"Payment already confirmed! Your stay at '{booking.property.title}' is confirmed.")
+        return redirect('my_bookings')
+
+    # Verify order with Cashfree
+    verify_res = verify_cashfree_order(order_id)
+    order_status = verify_res.get('order_status')
+
+    if order_status == 'PAID':
+        # Ensure dates are still available before final confirmation
+        prop = booking.property
+        if not prop.is_available_for_dates(booking.start_date, booking.end_date, exclude_booking_id=booking.pk):
+            booking.payment_status = 'REFUNDED'
+            booking.status = 'cancelled'
+            booking.save()
+            messages.warning(
+                request,
+                "These dates became unavailable while payment was processing. A full refund has been initiated."
+            )
+            return redirect('my_bookings')
+
+        booking.payment_status = 'PAID'
+        booking.status = 'approved'  # Instantly confirmed booking!
+        booking.cf_payment_id = verify_res.get('cf_payment_id') or f"cf_{order_id}"
+        booking.payment_method = verify_res.get('payment_method') or 'ONLINE'
+        booking.paid_at = timezone.now()
+        booking.save()
+
+        messages.success(
+            request,
+            f"🎉 Payment of ₹{booking.payment_amount:,.0f} successful! "
+            f"Your reservation for '{booking.property.title}' ({booking.start_date.strftime('%d %b %Y')} to {booking.end_date.strftime('%d %b %Y')}) is confirmed!"
+        )
+        return redirect('my_bookings')
+
+    elif order_status in ['FAILED', 'CANCELLED', 'USER_DROPPED']:
+        booking.payment_status = 'FAILED'
+        booking.save()
+        messages.error(
+            request,
+            f"Payment was not completed ({order_status.lower().replace('_', ' ')}). Your reservation was not confirmed."
+        )
+        return redirect('my_bookings')
+    else:
+        messages.info(
+            request,
+            f"Payment status is currently {order_status}. We will confirm your reservation once processed."
+        )
+        return redirect('my_bookings')
+
+
+@login_required
+def simulate_payment(request, booking_id):
+    """
+    Test helper for sandbox development:
+    Simulates successful Cashfree payment without completing external payment UI.
+    Auto-confirms the booking immediately.
+    """
+    booking = get_object_or_404(Booking, pk=booking_id, tenant=request.user)
+
+    if booking.payment_status == 'PAID':
+        messages.info(request, "This booking has already been paid and confirmed.")
+        return redirect('my_bookings')
+
+    booking.payment_status = 'PAID'
+    booking.status = 'approved'
+    booking.cf_payment_id = f"sim_pay_{int(time.time())}"
+    booking.payment_method = 'UPI (Cashfree Sandbox)'
+    booking.paid_at = timezone.now()
+    booking.save()
+
+    messages.success(
+        request,
+        f"🎉 Sandbox payment simulated successfully! Booking for '{booking.property.title}' is confirmed."
+    )
+    return redirect('my_bookings')
 
 
 @login_required
@@ -422,29 +641,28 @@ def my_bookings(request):
 @login_required
 def cancel_booking(request, pk):
     """
-    Allow a tenant to cancel their own PENDING booking.
-    Uses POST for the state change.
+    Allow a tenant to cancel their own pending or approved booking.
+    Handles refund tracking if the booking was already paid online.
     """
     booking = get_object_or_404(Booking, pk=pk, tenant=request.user)
 
     if request.method == 'POST':
-        if booking.status == 'pending':
+        if booking.status in ['pending', 'approved'] and not booking.checked_out:
             booking.status = 'cancelled'
-            booking.save()
-            messages.success(request, "Your booking request has been cancelled.")
-        elif booking.status == 'approved':
-            # Tenant checks out early / cancels an approved booking — free up the room
-            booking.status = 'cancelled'
-            booking.save()
-            prop = booking.property
-            prop.available_rooms = min(prop.available_rooms + 1, prop.total_rooms)
-            prop.save()
-            messages.success(
-                request,
-                "Your booking has been cancelled and the room is now available again."
-            )
+            if booking.payment_status == 'PAID':
+                booking.payment_status = 'REFUNDED'
+                booking.save()
+                messages.success(
+                    request,
+                    f"Your booking for '{booking.property.title}' has been cancelled. "
+                    f"A refund of ₹{booking.payment_amount:,.0f} has been processed via Cashfree."
+                )
+            else:
+                booking.payment_status = 'CANCELLED'
+                booking.save()
+                messages.success(request, f"Your reservation for '{booking.property.title}' has been cancelled.")
         else:
-            messages.error(request, "Only pending or approved bookings can be cancelled.")
+            messages.error(request, "Only pending or active bookings can be cancelled.")
         return redirect('my_bookings')
 
     return redirect('my_bookings')
@@ -457,7 +675,7 @@ def cancel_booking(request, pk):
 @login_required
 def owner_dashboard(request):
     """
-    Dashboard for property owners — shows owned properties and booking stats.
+    Dashboard for property owners — shows owned properties, confirmed bookings, and earnings.
     Only shows data belonging to the logged-in user.
     """
     my_properties = Property.objects.filter(owner=request.user)
@@ -465,10 +683,14 @@ def owner_dashboard(request):
     # Calculate summary stats from actual database records
     total_properties = my_properties.count()
     total_bookings = Booking.objects.filter(property__owner=request.user).count()
-    pending_bookings = Booking.objects.filter(
+    confirmed_bookings = Booking.objects.filter(
         property__owner=request.user,
-        status='pending'
+        status='approved'
     ).count()
+    total_revenue = Booking.objects.filter(
+        property__owner=request.user,
+        payment_status='PAID'
+    ).aggregate(Sum('payment_amount'))['payment_amount__sum'] or Decimal('0.00')
 
     # Recent booking requests for owner's properties (all statuses)
     recent_bookings = Booking.objects.filter(
@@ -481,12 +703,15 @@ def owner_dashboard(request):
         status='approved',
         checked_out=False,
     ).select_related('property', 'tenant')
+    active_count = active_bookings.count()
 
     context = {
         'my_properties': my_properties,
         'total_properties': total_properties,
         'total_bookings': total_bookings,
-        'pending_bookings': pending_bookings,
+        'confirmed_bookings': confirmed_bookings,
+        'active_count': active_count,
+        'total_revenue': total_revenue,
         'recent_bookings': recent_bookings,
         'active_bookings': active_bookings,
         'page_title': 'Owner Dashboard — RentEase',
@@ -571,49 +796,13 @@ def delete_property(request, pk):
 @login_required
 def manage_booking(request, pk):
     """
-    Allow an owner to approve or reject a booking for their property.
-    - Approve: decrements available_rooms (auto-marks unavailable at 0).
-    - Reject: no room change (room was never allocated).
-    Tenants cannot change booking status through this view.
+    Manual accept/reject has been removed. Bookings are instantly confirmed
+    upon online payment via Cashfree.
     """
-    booking = get_object_or_404(Booking, pk=pk)
-
-    # Only the owner of the property may act on this booking
-    if booking.property.owner != request.user:
-        messages.error(request, "You are not authorized to manage this booking.")
-        return redirect('owner_dashboard')
-
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        prop = booking.property
-
-        if action == 'approve':
-            if prop.available_rooms <= 0:
-                messages.error(
-                    request,
-                    "Cannot approve — no rooms are currently available for this property."
-                )
-                return redirect('owner_dashboard')
-            booking.status = 'approved'
-            booking.save()
-            # Decrement available rooms; Property.save() auto-sets is_available
-            prop.available_rooms = max(prop.available_rooms - 1, 0)
-            prop.save()
-            messages.success(
-                request,
-                f"Booking by {booking.get_tenant_display_name()} approved. "
-                f"{prop.available_rooms} room(s) remaining."
-            )
-        elif action == 'reject':
-            booking.status = 'rejected'
-            booking.save()
-            messages.info(
-                request,
-                f"Booking by {booking.get_tenant_display_name()} rejected."
-            )
-        else:
-            messages.error(request, "Invalid action.")
-
+    messages.info(
+        request,
+        "Manual approval is no longer required. Bookings are automatically confirmed upon online payment via Cashfree."
+    )
     return redirect('owner_dashboard')
 
 
@@ -622,7 +811,7 @@ def checkout_booking(request, pk):
     """
     Owner marks a tenant as checked out.
     - Sets booking.checked_out = True and records checkout_date.
-    - Increments available_rooms on the property (auto-marks available again if > 0).
+    - Sets booking.status = 'completed' (professionally completes the stay).
     """
     booking = get_object_or_404(Booking, pk=pk)
 
@@ -632,20 +821,14 @@ def checkout_booking(request, pk):
 
     if request.method == 'POST':
         if booking.status == 'approved' and not booking.checked_out:
-            from django.utils.timezone import now
             booking.checked_out = True
-            booking.checkout_date = now().date()
-            booking.status = 'cancelled'   # Treat as vacated/completed
+            booking.checkout_date = timezone.now().date()
+            booking.status = 'completed'
             booking.save()
-
-            prop = booking.property
-            prop.available_rooms = min(prop.available_rooms + 1, prop.total_rooms)
-            prop.save()
 
             messages.success(
                 request,
-                f"{booking.get_tenant_display_name()} has been checked out. "
-                f"Room is now available ({prop.available_rooms} of {prop.total_rooms} free)."
+                f"{booking.get_tenant_display_name()}'s stay is marked as completed."
             )
         else:
             messages.error(request, "Only active approved bookings can be checked out.")

@@ -12,11 +12,17 @@ RentEase is a full-stack Django web application for luxury property rentals. Pro
 - **Search & Multi-Criteria Filtering** — Real-time filtering by city location, max rent budget, property type, and minimum bedroom count.
 - **Property Portfolio Management** — High-resolution photo support, detailed room specifications, amenity chips, and verified owner info.
 - **Role-Based Authentication** — Secure registration, login, and session-based access control with `@login_required`.
-- **Booking Workflow** — Date-specific reservation requests with rental duration (1–36 months), state machine tracking (`pending`, `approved`, `rejected`, `cancelled`).
-- **Owner Dashboard** — Centralized hub for owners to monitor listings, view portfolio metrics, and approve/reject bookings with 1 click.
+- **Cashfree Payment Gateway Integration** — Seamless Cashfree Sandbox integration via Cashfree Web Checkout JS SDK v3:
+  - Supports UPI (GPay, PhonePe, Paytm), Credit & Debit Cards, Netbanking, and Wallets.
+  - Generates secure backend order sessions via Cashfree PG REST API (`POST /orders`).
+  - Verifies server-to-server transaction status on return callback (`GET /orders/{order_id}`).
+  - Built-in graceful sandbox simulation fallback for offline local testing and automated tests.
+- **Instant Booking Confirmation (No Manual Approval)** — Manual owner accept/reject has been replaced with modern instant booking confirmation immediately upon verified payment.
+- **Date-Specific Stay Reservation** — Check-in & check-out date pickers with conflict prevention against double-booking, daily pricing (`rent/day`), and live dynamic price calculation.
+- **Owner Dashboard** — Centralized hub for owners to monitor listings, total earnings/revenue, occupied units, active tenants, and mark checkouts when guests depart.
 - **Verified Rating & Review System** — Relational booking verification ensures only guests who have booked a property can submit a 1–5 star rating and review. Automatic dynamic average rating calculations across property cards and detail views.
 - **Security & Integrity** — CSRF tokens on every form, backend ownership authorization checks against IDOR attacks, and PBKDF2 password hashing.
-- **Automated Test Suite** — **39 automated unit tests** covering URLs, views, models, form validations, access control, and review permissions with a 100% pass rate.
+- **Automated Test Suite** — **43 automated unit tests** covering URLs, views, models, forms, Cashfree payment workflow, callback verification, date conflict prevention, and access control with 100% pass rate.
 - **Django Admin Panel** — Full operational backoffice for administrators.
 
 ## Technology Stack
@@ -116,10 +122,13 @@ Open your browser at: **http://127.0.0.1:8000/**
 | `/` | Homepage with hero search & featured properties | Public |
 | `/properties/` | Explore properties catalog with multi-filters | Public |
 | `/properties/<id>/` | Property specifications, photos & reviews | Public |
-| `/properties/<id>/book/` | Submit booking request | Logged-in Tenant |
+| `/properties/<id>/book/` | Select dates & guest details -> Proceed to Payment | Logged-in Tenant |
+| `/bookings/<id>/checkout/` | Cashfree Sandbox Web Checkout (SDK v3) | Logged-in Tenant |
+| `/bookings/payment/callback/` | Cashfree server return & instant confirmation | Authenticated |
+| `/bookings/<id>/simulate-payment/` | Dev/test quick payment simulator | Logged-in Tenant |
 | `/properties/<id>/review/`| Submit / update verified rating & review | Verified Booked Tenant |
-| `/my-bookings/` | Tenant booking tracker & review links | Logged-in Tenant |
-| `/owner/dashboard/` | Portfolio statistics & booking approvals | Property Owner |
+| `/my-bookings/` | Tenant booking tracker & payment status | Logged-in Tenant |
+| `/owner/dashboard/` | Portfolio statistics, revenue & checkout actions | Property Owner |
 | `/owner/properties/add/` | Publish new property listing | Property Owner |
 | `/owner/properties/<id>/edit/` | Edit property specifications | Property Owner |
 | `/owner/properties/<id>/delete/` | Remove listing from platform | Property Owner |

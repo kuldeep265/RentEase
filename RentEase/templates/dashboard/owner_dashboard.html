@@ -5,15 +5,17 @@
 {% block content %}
 
 <!-- Dashboard Header -->
-<div class="page-header" style="padding: 3.5rem 0 2.5rem;">
+<div class="page-header" style="padding: 3rem 0 2rem;">
   <div class="container">
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.25rem;">
       <div>
-        <p style="font-size:0.8rem; color:var(--color-primary-light); text-transform:uppercase; letter-spacing:2px; font-weight:700; margin-bottom:0.35rem;">Owner Dashboard</p>
+        <p style="font-size:0.75rem; color:var(--color-primary-light); text-transform:uppercase; letter-spacing:2px; font-weight:700; margin-bottom:0.35rem;">Host Control Center</p>
         <h1 style="font-size:2rem; font-weight:800; color:#ffffff;">
           Welcome, {{ request.user.first_name|default:request.user.username }}!
         </h1>
-        <p style="color:#94a3b8; margin-top:0.35rem;">Manage your portfolio, active listings, and client booking requests.</p>
+        <p style="color:#94a3b8; margin-top:0.35rem; font-size:0.92rem;">
+          Manage your property portfolio, guest reservations, and earnings in real-time.
+        </p>
       </div>
       <a href="{% url 'add_property' %}" class="btn btn-primary btn-lg" style="gap:0.5rem;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -25,8 +27,9 @@
 
 <div class="container" style="padding-top:1.5rem; padding-bottom:4rem;">
 
-  <!-- Stats Row -->
-  <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom:2.5rem;">
+  <!-- Stats Grid (4 clean metric cards) -->
+  <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1.25rem; margin-bottom:2.5rem;">
+    <!-- Stat 1: Total Listings -->
     <div class="stat-card">
       <div class="stat-card-icon stat-icon-green">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -38,6 +41,8 @@
         <div class="stat-value">{{ total_properties }}</div>
       </div>
     </div>
+
+    <!-- Stat 2: Confirmed Bookings -->
     <div class="stat-card">
       <div class="stat-card-icon stat-icon-blue">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -45,30 +50,50 @@
         </svg>
       </div>
       <div class="stat-info">
-        <div class="stat-label">Total Bookings</div>
-        <div class="stat-value">{{ total_bookings }}</div>
+        <div class="stat-label">Confirmed Bookings</div>
+        <div class="stat-value">{{ confirmed_bookings }}</div>
       </div>
     </div>
+
+    <!-- Stat 3: Active Stays -->
     <div class="stat-card">
-      <div class="stat-card-icon stat-icon-amber">
+      <div class="stat-card-icon" style="background:rgba(197,139,84,0.15); color:var(--color-primary-light);">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
       </div>
       <div class="stat-info">
-        <div class="stat-label">Pending Requests</div>
-        <div class="stat-value">{{ pending_bookings }}</div>
+        <div class="stat-label">Active Guests</div>
+        <div class="stat-value">{{ active_count }}</div>
+      </div>
+    </div>
+
+    <!-- Stat 4: Total Revenue -->
+    <div class="stat-card">
+      <div class="stat-card-icon stat-icon-amber">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <div class="stat-info">
+        <div class="stat-label">Total Revenue</div>
+        <div class="stat-value">₹{{ total_revenue|floatformat:0 }}</div>
       </div>
     </div>
   </div>
 
-  <!-- ===== MY PROPERTIES ===== -->
+  <!-- ===== SECTION 1: MY PROPERTIES ===== -->
   <div class="table-card" style="margin-bottom:2.5rem;">
-    <div style="padding:1.25rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between;">
-      <h2 style="font-size:1.15rem; font-weight:700; color:#ffffff;">My Properties</h2>
+    <div style="padding:1.25rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem;">
+      <div style="display:flex; align-items:center; gap:0.6rem;">
+        <h2 style="font-size:1.15rem; font-weight:700; color:#ffffff; margin:0;">My Properties</h2>
+        <span style="font-size:0.75rem; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid rgba(255,255,255,0.1); border-radius:9999px; padding:2px 8px; font-weight:600;">
+          {{ total_properties }}
+        </span>
+      </div>
       <a href="{% url 'add_property' %}" class="btn btn-primary btn-sm">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add New
+        Add New Listing
       </a>
     </div>
 
@@ -80,10 +105,10 @@
               <th>Property</th>
               <th>Location</th>
               <th>Type</th>
-              <th>Rent / mo</th>
-              <th>Rooms</th>
+              <th>Rent / day</th>
+              <th>Live Availability</th>
               <th>Status</th>
-              <th>Listed</th>
+              <th>Listed On</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -115,20 +140,24 @@
               <td style="font-size:0.88rem; color:#cbd5e1;">{{ prop.get_property_type_display }}</td>
               <td style="font-weight:800; color:var(--color-primary-light); font-size:0.95rem;">₹{{ prop.rent|floatformat:0 }}</td>
               <td>
-                <!-- Available / Total rooms with colour coding -->
+                <!-- Live Available / Total rooms -->
                 <div style="display:flex; flex-direction:column; gap:2px;">
                   <span style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1rem;
-                    color:{% if prop.available_rooms > 2 %}#4ade80{% elif prop.available_rooms == 1 %}#f97316{% else %}#ef4444{% endif %};">
-                    {{ prop.available_rooms }}/{{ prop.total_rooms }}
+                    color:{% if prop.get_current_available_rooms > 0 %}#4ade80{% else %}#ef4444{% endif %};">
+                    {{ prop.get_current_available_rooms }}/{{ prop.total_rooms }}
                   </span>
-                  <span style="font-size:0.72rem; color:#64748b;">available</span>
+                  <span style="font-size:0.72rem; color:#64748b;">
+                    {% if prop.get_current_available_rooms > 0 %}available today{% else %}fully booked today{% endif %}
+                  </span>
                 </div>
               </td>
               <td>
-                {% if prop.is_available %}
-                  <span class="status-badge badge-available">Available</span>
+                {% if prop.is_booked %}
+                  <span class="status-badge badge-unavailable">Occupied</span>
+                {% elif prop.is_available %}
+                  <span class="status-badge badge-available">Listed</span>
                 {% else %}
-                  <span class="status-badge badge-unavailable">Full</span>
+                  <span class="status-badge badge-unavailable">Unlisted</span>
                 {% endif %}
               </td>
               <td style="font-size:0.82rem; color:#94a3b8;">{{ prop.created_at|date:"d M Y" }}</td>
@@ -149,115 +178,64 @@
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
         </svg>
         <h3>No Properties Listed Yet</h3>
-        <p>Add your first property to start receiving booking requests.</p>
+        <p>Add your first residence to start receiving bookings and revenue.</p>
         <a href="{% url 'add_property' %}" class="btn btn-primary">Add Your First Property</a>
       </div>
     {% endif %}
   </div>
 
-  <!-- ===== ACTIVE TENANTS (approved + not checked out) ===== -->
-  {% if active_bookings %}
-  <div class="table-card" style="margin-bottom:2.5rem;">
-    <div style="padding:1.25rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:0.75rem;">
-      <h2 style="font-size:1.15rem; font-weight:700; color:#ffffff;">Active Tenants</h2>
-      <span style="font-size:0.75rem; background:rgba(74,222,128,0.12); color:#4ade80; border:1px solid rgba(74,222,128,0.25); border-radius:9999px; padding:2px 10px; font-weight:700;">
-        {{ active_bookings|length }} occupied
-      </span>
-    </div>
-    <div style="overflow-x:auto;">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Property</th>
-            <th>Tenant Name</th>
-            <th>Contact</th>
-            <th>Move-in</th>
-            <th>Duration</th>
-            <th>Expected Checkout</th>
-            <th>Paid</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for booking in active_bookings %}
-          <tr>
-            <td>
-              <a href="{% url 'property_detail' booking.property.pk %}"
-                 style="font-weight:700; font-size:0.9rem; color:#ffffff;">
-                {{ booking.property.title|truncatechars:28 }}
-              </a>
-            </td>
-            <td style="font-size:0.88rem; color:#cbd5e1;">
-              {{ booking.get_tenant_display_name }}
-              <div style="font-size:0.75rem; color:#94a3b8;">@{{ booking.tenant.username }}</div>
-            </td>
-            <td>
-              {% if booking.tenant_contact %}
-                <a href="tel:{{ booking.tenant_contact }}"
-                   style="font-size:0.88rem; color:var(--color-primary-light); font-weight:600; text-decoration:none;">
-                  📞 {{ booking.tenant_contact }}
-                </a>
-              {% else %}
-                <span style="color:#64748b; font-size:0.82rem;">—</span>
-              {% endif %}
-            </td>
-            <td style="font-size:0.88rem; color:#cbd5e1;">{{ booking.start_date|date:"d M Y" }}</td>
-            <td style="font-size:0.88rem; color:#cbd5e1;">{{ booking.duration_display }}</td>
-            <td style="font-size:0.88rem; color:#94a3b8;">
-              {% if booking.end_date %}{{ booking.end_date|date:"d M Y" }}{% else %}—{% endif %}
-            </td>
-            <td>
-              {% if booking.payment_amount %}
-                <span style="font-family:'Outfit',sans-serif; font-weight:700; color:#4ade80; font-size:0.92rem;">
-                  ₹{{ booking.payment_amount|floatformat:0 }}
-                </span>
-              {% else %}
-                <span style="color:#64748b; font-size:0.82rem;">—</span>
-              {% endif %}
-            </td>
-            <td>
-              <form method="post" action="{% url 'checkout_booking' booking.pk %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-outline"
-                        style="color:#4ade80; border-color:#4ade80;"
-                        onclick="return confirm('Mark {{ booking.get_tenant_display_name }} as checked out?');">
-                  ✓ Checkout
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ===== RECENT BOOKING REQUESTS ===== -->
+  <!-- ===== SECTION 2: GUEST RESERVATIONS & STAYS (UNIFIED MASTER TABLE) ===== -->
   <div class="table-card">
-    <div style="padding:1.25rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.08);">
-      <h2 style="font-size:1.15rem; font-weight:700; color:#ffffff;">Recent Booking Requests</h2>
+    <div style="padding:1.25rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+      <div>
+        <div style="display:flex; align-items:center; gap:0.6rem;">
+          <h2 style="font-size:1.15rem; font-weight:700; color:#ffffff; margin:0;">Guest Reservations &amp; Stays</h2>
+          {% if active_count > 0 %}
+            <span style="font-size:0.75rem; background:rgba(74,222,128,0.12); color:#4ade80; border:1px solid rgba(74,222,128,0.25); border-radius:9999px; padding:2px 10px; font-weight:700;">
+              {{ active_count }} active stay{{ active_count|pluralize }}
+            </span>
+          {% endif %}
+        </div>
+        <p style="font-size:0.8rem; color:#94a3b8; margin-top:0.25rem;">
+          Real-time reservation tracker with instant payment confirmation and stay completion management.
+        </p>
+      </div>
+
+      <!-- Quick Filter Pills -->
+      <div style="display:flex; gap:0.4rem; background:rgba(255,255,255,0.04); padding:4px; border-radius:8px; font-size:0.78rem;">
+        <button type="button" class="res-tab-btn active" data-filter="all" style="background:var(--color-primary); color:#000; border:none; padding:4px 10px; border-radius:6px; font-weight:700; cursor:pointer;">
+          All ({{ recent_bookings|length }})
+        </button>
+        <button type="button" class="res-tab-btn" data-filter="active" style="background:transparent; color:#cbd5e1; border:none; padding:4px 10px; border-radius:6px; font-weight:600; cursor:pointer;">
+          Active ({{ active_count }})
+        </button>
+        <button type="button" class="res-tab-btn" data-filter="completed" style="background:transparent; color:#cbd5e1; border:none; padding:4px 10px; border-radius:6px; font-weight:600; cursor:pointer;">
+          Completed
+        </button>
+      </div>
     </div>
 
     {% if recent_bookings %}
       <div style="overflow-x:auto;">
-        <table class="data-table">
+        <table class="data-table" id="reservationsTable">
           <thead>
             <tr>
-              <th>Property</th>
-              <th>Tenant</th>
-              <th>Contact</th>
-              <th>Move-in</th>
+              <th>Residence</th>
+              <th>Guest Name</th>
+              <th>Contact Phone</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
               <th>Duration</th>
-              <th>Paid</th>
-              <th>Status</th>
-              <th>Requested</th>
+              <th>Total Amount</th>
+              <th>Payment &amp; Status</th>
+              <th>Booked On</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {% for booking in recent_bookings %}
-            <tr>
+            <tr class="res-row" data-status="{% if booking.status == 'approved' and not booking.checked_out %}active{% elif booking.status == 'completed' or booking.checked_out %}completed{% else %}other{% endif %}"
+                {% if booking.status == 'approved' and not booking.checked_out %}style="background:rgba(74,222,128,0.02);"{% endif %}>
               <td>
                 <a href="{% url 'property_detail' booking.property.pk %}"
                    style="font-weight:700; font-size:0.9rem; color:#ffffff;">
@@ -279,10 +257,13 @@
                 {% endif %}
               </td>
               <td style="font-size:0.88rem; color:#cbd5e1;">{{ booking.start_date|date:"d M Y" }}</td>
+              <td style="font-size:0.88rem; color:#94a3b8;">
+                {% if booking.end_date %}{{ booking.end_date|date:"d M Y" }}{% else %}—{% endif %}
+              </td>
               <td style="font-size:0.88rem; color:#cbd5e1;">{{ booking.duration_display }}</td>
               <td>
                 {% if booking.payment_amount %}
-                  <span style="font-family:'Outfit',sans-serif; font-weight:700; color:#4ade80; font-size:0.9rem;">
+                  <span style="font-family:'Outfit',sans-serif; font-weight:700; color:#4ade80; font-size:0.92rem;">
                     ₹{{ booking.payment_amount|floatformat:0 }}
                   </span>
                 {% else %}
@@ -290,32 +271,48 @@
                 {% endif %}
               </td>
               <td>
-                <span class="status-badge status-{{ booking.status }}">{{ booking.get_status_display }}</span>
-                {% if booking.checked_out %}
-                  <div style="font-size:0.72rem; color:#4ade80; margin-top:3px;">
-                    Checked out {{ booking.checkout_date|date:"d M Y" }}
-                  </div>
+                {% if booking.status == 'approved' and not booking.checked_out %}
+                  <span class="status-badge" style="background:rgba(74,222,128,0.15); color:#4ade80; border:1px solid rgba(74,222,128,0.3); font-weight:700;">
+                    ✓ Confirmed &amp; Paid
+                  </span>
+                  {% if booking.payment_method %}
+                    <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px;">
+                      {{ booking.payment_method }}
+                    </div>
+                  {% endif %}
+                {% elif booking.checked_out or booking.status == 'completed' %}
+                  <span class="status-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border:1px solid rgba(148,163,184,0.3);">
+                    Completed
+                  </span>
+                  {% if booking.checkout_date %}
+                    <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px;">
+                      Departed {{ booking.checkout_date|date:"d M" }}
+                    </div>
+                  {% endif %}
+                {% elif booking.status == 'cancelled' or booking.payment_status == 'FAILED' %}
+                  <span class="status-badge" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);">
+                    Cancelled
+                  </span>
+                {% else %}
+                  <span class="status-badge" style="background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid rgba(251,191,36,0.3);">
+                    Awaiting Payment
+                  </span>
                 {% endif %}
               </td>
               <td style="font-size:0.82rem; color:#94a3b8;">{{ booking.created_at|date:"d M Y" }}</td>
               <td>
-                {% if booking.status == 'pending' %}
-                  <div style="display:flex; gap:0.4rem;">
-                    <form method="post" action="{% url 'manage_booking' booking.pk %}" style="display:inline;">
-                      {% csrf_token %}
-                      <button type="submit" name="action" value="approve"
-                              class="btn btn-sm btn-primary" style="padding:0.35rem 0.85rem;">
-                        ✓ Approve
-                      </button>
-                    </form>
-                    <form method="post" action="{% url 'manage_booking' booking.pk %}" style="display:inline;">
-                      {% csrf_token %}
-                      <button type="submit" name="action" value="reject"
-                              class="btn btn-danger btn-sm" style="padding:0.35rem 0.85rem;">
-                        ✕ Reject
-                      </button>
-                    </form>
-                  </div>
+                {% if booking.status == 'approved' and not booking.checked_out %}
+                  <form method="post" action="{% url 'checkout_booking' booking.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline" style="color:#4ade80; border-color:#4ade80; font-size:0.78rem; padding:0.35rem 0.75rem;"
+                            onclick="return confirm('Complete stay and checkout for {{ booking.get_tenant_display_name }}?');">
+                      ✓ Mark Checked Out
+                    </button>
+                  </form>
+                {% elif booking.checked_out or booking.status == 'completed' %}
+                  <span style="font-size:0.8rem; color:#4ade80; font-weight:600;">✓ Stay Finished</span>
+                {% elif booking.status == 'pending' %}
+                  <span style="font-size:0.78rem; color:#64748b;">Pending Payment</span>
                 {% else %}
                   <span style="font-size:0.82rem; color:#64748b;">—</span>
                 {% endif %}
@@ -326,15 +323,46 @@
         </table>
       </div>
     {% else %}
-      <div class="empty-state" style="padding:3rem;">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <div class="empty-state" style="padding:3.5rem;">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
         </svg>
-        <h3>No Booking Requests Yet</h3>
-        <p>Booking requests for your listed properties will appear here.</p>
+        <h3>No Reservations Yet</h3>
+        <p>Guest bookings and verified online payments will appear here automatically.</p>
       </div>
     {% endif %}
   </div>
 
 </div>
+
+<!-- Filter Tabs JS -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tabs = document.querySelectorAll('.res-tab-btn');
+    const rows = document.querySelectorAll('.res-row');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function () {
+        tabs.forEach(t => {
+          t.style.background = 'transparent';
+          t.style.color = '#cbd5e1';
+          t.classList.remove('active');
+        });
+        this.style.background = 'var(--color-primary)';
+        this.style.color = '#000';
+        this.classList.add('active');
+
+        const filter = this.getAttribute('data-filter');
+        rows.forEach(row => {
+          if (filter === 'all') {
+            row.style.display = '';
+          } else {
+            const status = row.getAttribute('data-status');
+            row.style.display = (status === filter) ? '' : 'none';
+          }
+        });
+      });
+    });
+  });
+</script>
 {% endblock %}

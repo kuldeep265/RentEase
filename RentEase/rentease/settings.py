@@ -8,17 +8,27 @@ NOTE: DEBUG=True is for LOCAL DEVELOPMENT ONLY.
       Set DEBUG=False and configure ALLOWED_HOSTS for any deployment.
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Read .env file if present
+env_file = BASE_DIR / '.env'
+if env_file.exists():
+    with open(env_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                k, v = line.split('=', 1)
+                os.environ.setdefault(k.strip(), v.strip().strip("'\""))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rentease-college-project-key-change-in-production-2024'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-rentease-college-project-key-change-in-production-2024')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
@@ -130,3 +140,9 @@ MESSAGE_TAGS = {
 # File upload settings — limit property images to 5MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024   # 5 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024   # 5 MB
+
+# Cashfree Payment Gateway Settings (Sandbox / Test Environment)
+CASHFREE_APP_ID = os.getenv('CASHFREE_APP_ID', '').strip()
+CASHFREE_SECRET_KEY = os.getenv('CASHFREE_SECRET_KEY', '').strip()
+CASHFREE_ENV = os.getenv('CASHFREE_ENV', 'TEST').strip().upper()  # TEST or PROD
+CASHFREE_API_VERSION = os.getenv('CASHFREE_API_VERSION', '2023-08-01').strip()

@@ -1306,6 +1306,11 @@ textarea::placeholder {
   color: #cbd5e1;
   border: 1px solid rgba(148, 163, 184, 0.3);
 }
+.status-completed {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
 
 /* ============================================================
    DASHBOARD & STATS & TABLES

@@ -88,7 +88,7 @@
               </div>
             {% endif %}
             <span class="property-type-badge">{{ property.get_property_type_display }}</span>
-            {% if property.is_available %}
+            {% if property.is_currently_available %}
               <span class="availability-badge badge-available">Available</span>
             {% else %}
               <span class="availability-badge badge-unavailable">Not Available</span>
@@ -129,7 +129,7 @@
             </div>
             <div class="property-card-footer">
               <div>
-                <div class="property-price">₹{{ property.rent|floatformat:0 }}<small>/mo</small></div>
+                <div class="property-price">₹{{ property.rent|floatformat:0 }}<small>/day</small></div>
               </div>
               <a href="{% url 'property_detail' property.pk %}" class="btn btn-outline btn-sm">View Details</a>
             </div>
@@ -182,17 +182,17 @@
             <path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>
           </svg>
         </div>
-        <h3 class="benefit-title">Direct Booking Requests</h3>
-        <p class="benefit-desc">Send formal booking requests directly to property owners in seconds. Specify your move-in date and duration seamlessly.</p>
+        <h3 class="benefit-title">Instant Online Bookings</h3>
+        <p class="benefit-desc">Book your stay instantly with instant confirmation powered by Cashfree Sandbox. No waiting for host approvals or manual delays.</p>
       </div>
       <div class="benefit-card">
         <div class="benefit-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
           </svg>
         </div>
-        <h3 class="benefit-title">Real-Time Status &amp; Updates</h3>
-        <p class="benefit-desc">Track all your booking requests with live status notifications. Instant alerts when owners confirm or review your application.</p>
+        <h3 class="benefit-title">Secure Digital Payments</h3>
+        <p class="benefit-desc">Pay seamlessly via UPI (GPay, PhonePe), Credit/Debit Cards, or Netbanking with 256-bit encryption and instant verified digital receipts.</p>
       </div>
     </div>
   </div>

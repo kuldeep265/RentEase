@@ -24,8 +24,11 @@ urlpatterns = [
     path('accounts/login/', views.login_view, name='login'),
     path('accounts/logout/', views.logout_view, name='logout'),
 
-    # ---- Bookings ----
+    # ---- Bookings & Cashfree Payments ----
     path('properties/<int:pk>/book/', views.book_property, name='book_property'),
+    path('bookings/<int:booking_id>/checkout/', views.cashfree_checkout, name='cashfree_checkout'),
+    path('bookings/payment/callback/', views.payment_callback, name='payment_callback'),
+    path('bookings/<int:booking_id>/simulate-payment/', views.simulate_payment, name='simulate_payment'),
     path('my-bookings/', views.my_bookings, name='my_bookings'),
     path('my-bookings/<int:pk>/cancel/', views.cancel_booking, name='cancel_booking'),
 

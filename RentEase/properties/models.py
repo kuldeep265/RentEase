@@ -39,8 +39,8 @@ class Property(models.Model):
     rent = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        validators=[MinValueValidator(1000)],
-        help_text="Monthly rent in INR (₹)."
+        validators=[MinValueValidator(100)],
+        help_text="Daily rent in INR (₹)."
     )
 
     # Classification
@@ -132,12 +132,75 @@ class Property(models.Model):
         """Return total review count."""
         return self.reviews.count()
 
+    def is_available_for_dates(self, check_in, check_out, exclude_booking_id=None):
+        """
+        Check if property has available units for the specified date range.
+        Overlaps when: booking.start_date < check_out and booking.end_date > check_in.
+        Only approved active bookings count against availability.
+        """
+        if not self.is_available:
+            return False
+        overlapping = self.bookings.filter(
+            status='approved',
+            start_date__lt=check_out,
+            end_date__gt=check_in,
+        )
+        if exclude_booking_id:
+            overlapping = overlapping.exclude(pk=exclude_booking_id)
+        return overlapping.count() < self.total_rooms
+
+    def get_currently_occupied_count(self):
+        """
+        Number of units occupied by approved active or upcoming reservations that have not checked out.
+        Counts all approved bookings where checked_out=False and end_date >= today.
+        """
+        today = timezone.now().date()
+        return self.bookings.filter(
+            status='approved',
+            checked_out=False,
+            end_date__gte=today
+        ).count()
+
+    def get_current_available_rooms(self):
+        """Dynamically calculated available units."""
+        occupied = self.get_currently_occupied_count()
+        return max(0, self.total_rooms - occupied)
+
+    @builtins.property
+    def is_booked(self):
+        """
+        Check if property is currently booked/reserved.
+        - For a single-unit property (total_rooms <= 1): Any approved booking with
+          checked_out=False and end_date >= today means the property is booked.
+        - For multi-unit properties (total_rooms > 1): True if all units are occupied.
+        """
+        today = timezone.now().date()
+        active_count = self.bookings.filter(
+            status='approved',
+            checked_out=False,
+            end_date__gte=today
+        ).count()
+        return active_count >= max(1, self.total_rooms)
+
+    @builtins.property
+    def is_currently_available(self):
+        """
+        Dynamically determine if the property is open and can be booked right now.
+        Returns True only if:
+        1. Owner marked listing as available (is_available == True)
+        2. Property is not currently booked (not self.is_booked)
+        3. Available rooms count > 0
+        """
+        if not self.is_available:
+            return False
+        if self.is_booked:
+            return False
+        return self.get_current_available_rooms() > 0
+
     def save(self, *args, **kwargs):
         """Auto-set is_available to False when no rooms are left."""
         if self.available_rooms <= 0:
             self.is_available = False
-        else:
-            self.is_available = True
         super().save(*args, **kwargs)
 
 
@@ -151,6 +214,7 @@ class Booking(models.Model):
         ('approved', 'Approved'),
         ('rejected', 'Rejected'),
         ('cancelled', 'Cancelled'),
+        ('completed', 'Completed'),
     ]
 
     # Relationships
@@ -165,38 +229,50 @@ class Booking(models.Model):
         related_name='bookings',
     )
 
-    # Request details
-    DURATION_TYPE_CHOICES = [
-        ('months', 'Months'),
-        ('days', 'Days'),
-    ]
+    # Booking dates & duration
+    start_date = models.DateField(help_text="Check-in date.")
+    end_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Check-out date."
+    )
+    total_days = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        help_text="Total duration of stay in days."
+    )
+    guests = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1), MaxValueValidator(50)],
+        help_text="Number of guests."
+    )
 
-    start_date = models.DateField(help_text="Preferred move-in date.")
+    # Legacy fields kept for backward compatibility
     duration_type = models.CharField(
         max_length=6,
-        choices=DURATION_TYPE_CHOICES,
-        default='months',
-        help_text="Whether the rental duration is specified in months or days."
+        default='days',
+        blank=True,
+        null=True,
+        help_text="Rental duration type (days)."
     )
     duration_months = models.PositiveIntegerField(
         null=True,
         blank=True,
         validators=[MinValueValidator(1), MaxValueValidator(36)],
-        help_text="Rental duration in months (1–36). Used when duration_type is 'months'."
+        help_text="Legacy duration in months."
     )
     duration_days = models.PositiveIntegerField(
         null=True,
         blank=True,
         validators=[MinValueValidator(1), MaxValueValidator(365)],
-        help_text="Rental duration in days (1–365). Used when duration_type is 'days'."
+        help_text="Rental duration in days."
     )
+
     payment_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        null=True,
-        blank=True,
-        validators=[MinValueValidator(1000)],
-        help_text="Total payment amount collected at booking time (min ₹1,000)."
+        default=0,
+        help_text="Total payment amount in INR (₹)."
     )
     message = models.TextField(
         blank=True,
@@ -222,6 +298,58 @@ class Booking(models.Model):
         default='pending',
     )
 
+    # Cashfree Payment Gateway Fields
+    PAYMENT_STATUS_CHOICES = [
+        ('PENDING', 'Pending Payment'),
+        ('PAID', 'Paid / Confirmed'),
+        ('FAILED', 'Payment Failed'),
+        ('CANCELLED', 'Payment Cancelled'),
+        ('REFUNDED', 'Refunded'),
+    ]
+
+    order_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text="Unique Cashfree order identifier."
+    )
+    cf_order_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Cashfree internal order reference."
+    )
+    payment_session_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text="Cashfree payment session ID for SDK checkout."
+    )
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PAYMENT_STATUS_CHOICES,
+        default='PENDING',
+        help_text="Payment status from Cashfree gateway."
+    )
+    cf_payment_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Cashfree transaction/payment ID upon success."
+    )
+    payment_method = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Payment method used (e.g. UPI, CARD, NETBANKING)."
+    )
+    paid_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Timestamp when payment was successfully completed."
+    )
+
     # Checkout tracking
     checked_out = models.BooleanField(
         default=False,
@@ -244,29 +372,42 @@ class Booking(models.Model):
     def __str__(self):
         return f"Booking by {self.tenant.username} for '{self.property.title}' — {self.status}"
 
-    @builtins.property
-    def end_date(self):
-        """Calculate the expected checkout date based on duration_type."""
-        if not self.start_date:
-            return None
-        from datetime import date, timedelta
-        if self.duration_type == 'days' and self.duration_days:
-            return self.start_date + timedelta(days=self.duration_days)
-        if self.duration_months:
-            month = self.start_date.month - 1 + self.duration_months
-            year = self.start_date.year + month // 12
-            month = month % 12 + 1
-            day = min(self.start_date.day, calendar.monthrange(year, month)[1])
-            return date(year, month, day)
-        return None
+    def calculate_total_price(self):
+        """Calculate total booking cost: total_days * property daily rent."""
+        days = self.total_days or 1
+        if self.property and self.property.rent:
+            from decimal import Decimal
+            return round(Decimal(str(self.property.rent)) * days, 2)
+        return Decimal('0.00')
 
     def duration_display(self):
         """Human-readable duration string."""
-        if self.duration_type == 'days' and self.duration_days:
-            return f"{self.duration_days} day{'s' if self.duration_days != 1 else ''}"
-        if self.duration_months:
-            return f"{self.duration_months} month{'s' if self.duration_months != 1 else ''}"
-        return "—"
+        days = self.total_days or (self.duration_days if self.duration_days else 1)
+        return f"{days} day{'s' if days != 1 else ''}"
+
+    @builtins.property
+    def is_paid(self):
+        """Check if booking payment was completed successfully."""
+        return self.payment_status == 'PAID'
+
+    def save(self, *args, **kwargs):
+        """Auto-calculate total_days, end_date, and payment_amount on save."""
+        from datetime import timedelta
+        if self.start_date and self.end_date:
+            diff = (self.end_date - self.start_date).days
+            self.total_days = max(diff, 1)
+            self.duration_days = self.total_days
+        elif self.start_date and self.duration_days:
+            self.total_days = self.duration_days
+            self.end_date = self.start_date + timedelta(days=self.total_days)
+        elif self.start_date and self.duration_months:
+            self.total_days = self.duration_months * 30
+            self.duration_days = self.total_days
+            self.end_date = self.start_date + timedelta(days=self.total_days)
+
+        if self.property_id:
+            self.payment_amount = self.calculate_total_price()
+        super().save(*args, **kwargs)
 
     def get_tenant_display_name(self):
         """Return the name provided at booking, falling back to User profile."""

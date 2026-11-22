@@ -42,9 +42,9 @@
                value="{{ location }}" autocomplete="off">
       </div>
       <div class="filter-field">
-        <label for="f-rent">Max Rent (₹/mo)</label>
+        <label for="f-rent">Max Rent (₹/day)</label>
         <input type="number" id="f-rent" name="max_rent"
-               placeholder="e.g. 50000"
+               placeholder="e.g. 3500"
                value="{{ max_rent }}" min="0">
       </div>
       <div class="filter-field">
@@ -92,10 +92,10 @@
             </div>
           {% endif %}
           <span class="property-type-badge">{{ property.get_property_type_display }}</span>
-          {% if property.is_available %}
+          {% if property.is_currently_available %}
             <span class="availability-badge badge-available">Available</span>
           {% else %}
-            <span class="availability-badge badge-unavailable">Unavailable</span>
+            <span class="availability-badge badge-unavailable">Not Available</span>
           {% endif %}
         </div>
 
@@ -140,7 +140,7 @@
 
           <div class="property-card-footer">
             <div>
-              <div class="property-price">₹{{ property.rent|floatformat:0 }}<small>/mo</small></div>
+              <div class="property-price">₹{{ property.rent|floatformat:0 }}<small>/day</small></div>
             </div>
             <a href="{% url 'property_detail' property.pk %}" class="btn btn-outline btn-sm">View Details</a>
           </div>
